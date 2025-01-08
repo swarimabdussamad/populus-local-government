@@ -1,14 +1,14 @@
 import { View, Text } from 'react-native';
 import React from 'react';
-import { Foundation, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Foundation, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-
 
 // Importing your screens
 import Home from "@/app/(tabs)/home";
 import Message from "@/app/(tabs)/message";
 import Map from "@/app/(tabs)/map";
 import Survey from "@/app/(tabs)/survey";
+import Users from "@/app/(tabs)/users"; // Importing the new users screen
 
 const Tab = createBottomTabNavigator();
 
@@ -28,7 +28,6 @@ const tabConfig = [
     unfocusedIcon: 'home-map-marker',
     iconComponent: MaterialCommunityIcons
   },
-  
   {
     name: "Survey",
     component: Survey,
@@ -42,6 +41,13 @@ const tabConfig = [
     focusedIcon: 'message-text',
     unfocusedIcon: 'message-text',
     iconComponent: MaterialCommunityIcons
+  },
+  {
+    name: "Users", // Adding the Users tab
+    component: Users, // Your users.tsx component
+    focusedIcon: 'user', // Icon for focused state
+    unfocusedIcon: 'user', // Icon for unfocused state
+    iconComponent: Feather // Icon library for the user icon
   }
 ];
 
@@ -60,8 +66,8 @@ const TabLayout = () => {
             return <IconComponent name={icon} size={size} color={color} />;
           },
           headerTitleAlign: "center",
-          tabBarStyle:{
-            backgroundColor:'#161622'
+          tabBarStyle: {
+            backgroundColor: '#161622'
           }
         };
       }}
