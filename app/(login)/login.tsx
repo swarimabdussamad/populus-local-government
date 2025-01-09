@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { API_URL } from '@/constants/constants';
-
 import {
   View,
   Text,
@@ -12,6 +11,7 @@ import {
 } from 'react-native';
 import DropdownComponent from '@/components/DropdownComponent';
 import { Link, useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -19,6 +19,7 @@ const LoginPage = () => {
   const [role, setRole] = useState(null);
   const [errors, setErrors] = useState({ email: '', password: '', role: '' });
   const router = useRouter();
+
   const validateForm = () => {
     let isValid = true;
     let newErrors = { email: '', password: '', role: '' };
@@ -49,47 +50,69 @@ const LoginPage = () => {
   };
 
   const handleLogin = async () => {
+    // First validate the form
+    if (!validateForm()) {
+      return; // Stop if validation fails
+    }
+
     try {
+      const loginData = {
+        email: email,
+        password: password,
+        role: role
+      };
+
       const response = await fetch(`${API_URL}/government/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify()
+        body: JSON.stringify(loginData)
       });
 
       if (!response.ok) {
-        throw new Error('Failed to submit form');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Login failed');
       }
 
       const data = await response.json();
-      Alert.alert('Success', 'Form submitted successfully!');
       
+      // Store the token
+      await AsyncStorage.setItem('userToken', data.token);
+      
+      
+      
+      Alert.alert('Success', 'Logged in successfully!');
+      
+      // Navigate to the dashboard
+      router.replace('/home');
+
     } catch (error) {
-      Alert.alert('Error', 'Failed to submit form. Please try again.');
-      console.error('Submission error:', error);
+      Alert.alert(
+        'Login Failed', 
+        'Unable to log in. Please check your credentials and try again.'
+      );
+      console.error('Login error:', error);
     }
   };
 
-
-
   return (
     <View style={styles.container}>
-  
-
       {/* Logo */}
       <Image
         source={require('../../assets/images/logo.png')}
         style={styles.logo}
       />
-    <View style={styles.input}>
-    <DropdownComponent
-        value={role}
-        setValue={setRole}
-        error={errors.role}
-      />
-    </View>
-      
+
+      {/* Role Dropdown */}
+      <View style={styles.input}>
+        <DropdownComponent
+          value={role}
+          setValue={setRole}
+          error={errors.role}
+        />
+      </View>
+      {errors.role ? <Text style={styles.errorText}>{errors.role}</Text> : null}
 
       {/* Email Input */}
       <TextInput
@@ -97,6 +120,7 @@ const LoginPage = () => {
         placeholder="Email"
         placeholderTextColor="#999"
         keyboardType="email-address"
+        autoCapitalize="none"
         value={email}
         onChangeText={(text) => setEmail(text)}
       />
@@ -127,9 +151,7 @@ const LoginPage = () => {
       </TouchableOpacity>
 
       {/* Forgot Password */}
-      <TouchableOpacity>
-        <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
-      </TouchableOpacity>
+     
 
       {/* Create New Account */}
       <Link href="/signup" style={styles.createAccountButton}>
