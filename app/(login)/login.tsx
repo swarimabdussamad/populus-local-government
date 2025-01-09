@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { API_URL } from '@/constants/constants';
+
 import {
   View,
   Text,
@@ -46,13 +48,30 @@ const LoginPage = () => {
     return isValid;
   };
 
-  const handleLogin = () => {
-    if (validateForm()) {
-      Alert.alert('Success', 'You have logged in successfully!');
-      // Proceed with login logic
-      router.push('/(tabs)');
+  const handleLogin = async () => {
+    try {
+      const response = await fetch(`${API_URL}/government/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify()
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit form');
+      }
+
+      const data = await response.json();
+      Alert.alert('Success', 'Form submitted successfully!');
+      
+    } catch (error) {
+      Alert.alert('Error', 'Failed to submit form. Please try again.');
+      console.error('Submission error:', error);
     }
   };
+
+
 
   return (
     <View style={styles.container}>
