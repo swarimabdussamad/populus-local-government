@@ -14,21 +14,21 @@ import { Link, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState(null);
-  const [errors, setErrors] = useState({ email: '', password: '', role: '' });
+  const [errors, setErrors] = useState({ username: '', password: '', role: '' });
   const router = useRouter();
 
   const validateForm = () => {
     let isValid = true;
-    let newErrors = { email: '', password: '', role: '' };
+    let newErrors = { username: '', password: '', role: '' };
 
-    if (!email) {
-      newErrors.email = 'Email is required.';
+    if (!username) {
+      newErrors.username = 'Username is required.';
       isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Enter a valid email address.';
+    } else if (username.length < 3) {
+      newErrors.username = 'Username must be at least 3 characters long.';
       isValid = false;
     }
 
@@ -50,14 +50,13 @@ const LoginPage = () => {
   };
 
   const handleLogin = async () => {
-    // First validate the form
     if (!validateForm()) {
-      return; // Stop if validation fails
+      return;
     }
 
     try {
       const loginData = {
-        email: email,
+        username: username,
         password: password,
         role: role
       };
@@ -76,17 +75,13 @@ const LoginPage = () => {
       }
 
       const data = await response.json();
-      
-      // Store the token
-      await AsyncStorage.setItem('userToken', data.token);
-      
-      
-      
-      Alert.alert('Success', 'Logged in successfully!');
-      
-      // Navigate to the dashboard
-      router.replace('/home');
 
+      await AsyncStorage.setItem('userToken', data.token);
+      console.log(data.token)
+
+      Alert.alert('Success', 'Logged in successfully!');
+
+      router.replace('/home');
     } catch (error) {
       Alert.alert(
         'Login Failed', 
@@ -114,17 +109,16 @@ const LoginPage = () => {
       </View>
       {errors.role ? <Text style={styles.errorText}>{errors.role}</Text> : null}
 
-      {/* Email Input */}
+      {/* Username Input */}
       <TextInput
-        style={[styles.input, errors.email ? styles.inputError : null]}
-        placeholder="Email"
+        style={[styles.input, errors.username ? styles.inputError : null]}
+        placeholder="Username"
         placeholderTextColor="#999"
-        keyboardType="email-address"
         autoCapitalize="none"
-        value={email}
-        onChangeText={(text) => setEmail(text)}
+        value={username}
+        onChangeText={(text) => setUsername(text)}
       />
-      {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
+      {errors.username ? <Text style={styles.errorText}>{errors.username}</Text> : null}
 
       {/* Password Input */}
       <View style={styles.passwordContainer}>
@@ -150,9 +144,6 @@ const LoginPage = () => {
         <Text style={styles.loginText}>Log In</Text>
       </TouchableOpacity>
 
-      {/* Forgot Password */}
-     
-
       {/* Create New Account */}
       <Link href="/signup" style={styles.createAccountButton}>
         Create new account
@@ -169,12 +160,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     padding: 20,
-  },
-  languageText: {
-    marginTop: 20,
-    color: '#5c5c5c',
-    fontSize: 16,
-    fontWeight: '500',
   },
   logo: {
     width: 200,
@@ -200,11 +185,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  showText: {
-    marginLeft: 8,
-    color: '#007bff',
-    fontWeight: '600',
-  },
   loginButton: {
     width: '100%',
     height: 50,
@@ -218,10 +198,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  forgotPasswordText: {
-    color: '#007bff',
-    marginBottom: 20,
   },
   createAccountButton: {
     borderWidth: 1,

@@ -1,14 +1,30 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+import React, { useState, useEffect } from 'react';
+import { View, Text, Button, FlatList } from 'react-native';
 
-const Users = () => {
+const UnverifiedUsers = () => {
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    fetch('${API_URL}/government/unverified-users')
+      .then(res => res.json())
+      .then(data => setUsers(data))
+      .catch(error => console.error(error));
+  }, []);
+
   return (
     <View>
-      <Text>users</Text>
+      <FlatList
+        data={users}
+        keyExtractor={(item) => item.username}
+        renderItem={({ item }) => (
+          <View>
+            <Text>Name: {item.name}</Text>
+            <Button title="Verify" />
+          </View>
+        )}
+      />
     </View>
-  )
-}
+  );
+};
 
-export default Users
-
-const styles = StyleSheet.create({})
+export default UnverifiedUsers;
