@@ -61,6 +61,8 @@ const LoginPage = () => {
         role: role
       };
 
+      console.log('Sending login request with:', loginData); // Debug log
+
       const response = await fetch(`${API_URL}/government/login`, {
         method: 'POST',
         headers: {
@@ -69,25 +71,33 @@ const LoginPage = () => {
         body: JSON.stringify(loginData)
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
-      }
-
       const data = await response.json();
 
+      
+
       await AsyncStorage.setItem('userToken', data.token);
-      console.log(data.token)
+      console.log('Token stored:', data.token); // Debug log
 
-      Alert.alert('Success', 'Logged in successfully!');
-
-      router.replace('/home');
+      // Show alert first and navigate after user acknowledges
+      Alert.alert(
+        'Success',
+        'Logged in successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              console.log('Navigating to tabs...'); // Debug log
+              router.replace('/(tabs)/home');
+            }
+          }
+        ]
+      );
     } catch (error) {
+      console.error('Login error:', error); // Debug log
       Alert.alert(
         'Login Failed', 
         'Unable to log in. Please check your credentials and try again.'
       );
-      console.error('Login error:', error);
     }
   };
 
@@ -143,6 +153,18 @@ const LoginPage = () => {
       <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
         <Text style={styles.loginText}>Log In</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.loginButton, { backgroundColor: '#4CAF50' }]} // Test button styling
+        onPress={() => {
+        console.log('Navigating directly to tabs...');
+        router.replace('/(tabs)/home'); // Replace this with your desired tab path
+        }}
+      >
+  <Text style={styles.loginText}>Test Navigate to Tabs</Text>
+</TouchableOpacity>
+
+      
 
       {/* Create New Account */}
       <Link href="/signup" style={styles.createAccountButton}>
