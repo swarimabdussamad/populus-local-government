@@ -28,6 +28,7 @@ const SignUp = () => {
     aadhaar: "",
     username: "",
     password: "",
+    photo: "",
   });
   const [errors, setErrors] = useState({});
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -45,7 +46,7 @@ const SignUp = () => {
         },
         body: JSON.stringify(formData),
       });
-
+      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Sign-up failed");
@@ -160,7 +161,11 @@ const SignUp = () => {
           value={formData.password}
           onChangeText={(text) => handleInputChange("password", text)}
         />
-        <ImagePickerComponent />
+        <ImagePickerComponent
+          value={formData.photo} // Pass the current value of the photo field
+          onChange={(fileUri) => handleInputChange("photo", fileUri)} // Update the formData with the selected photo
+        />
+
         <TouchableOpacity style={styles.button} onPress={handleSignUp}>
           <Text style={styles.buttonText}>Sign Up</Text>
         </TouchableOpacity>
