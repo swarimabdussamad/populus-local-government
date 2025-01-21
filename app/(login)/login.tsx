@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import DropdownComponent from '@/components/DropdownComponent';
 import { Link, useRouter } from 'expo-router';
@@ -18,13 +19,15 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState(null);
   const [errors, setErrors] = useState({ username: '', password: '', role: '' });
+  const [isLoading, setIsLoading] = useState(false); // Initialize loading state
   const router = useRouter();
 
+  // Validation function
   const validateForm = () => {
     let isValid = true;
-    let newErrors = { username: '', password: '', role: '' };
+    const newErrors = { username: '', password: '', role: '' };
 
-    if (!username) {
+    if (!username.trim()) {
       newErrors.username = 'Username is required.';
       isValid = false;
     } else if (username.length < 3) {
@@ -32,7 +35,7 @@ const LoginPage = () => {
       isValid = false;
     }
 
-    if (!password) {
+    if (!password.trim()) {
       newErrors.password = 'Password is required.';
       isValid = false;
     } else if (password.length < 6) {
@@ -49,55 +52,55 @@ const LoginPage = () => {
     return isValid;
   };
 
+  // Login handler
   const handleLogin = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
+
+    setIsLoading(true); // Start loading
 
     try {
       const loginData = {
-        username: username,
-        password: password,
-        role: role
+        username,
+        password,
+        role,
       };
 
-      console.log('Sending login request with:', loginData); // Debug log
+      // Determine endpoint based on role
+      const endpoint =
+        role === 'local_government'
+          ? `${API_URL}/government/login`
+          : `${API_URL}/department/login`;
 
-      const response = await fetch(`${API_URL}/government/login`, {
+      console.log('Sending login request:', loginData);
+
+      const response = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(loginData)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginData),
       });
 
       const data = await response.json();
 
-      
+      if (!response.ok) {
+        throw new Error(data.message || 'Authentication failed.');
+      }
 
-      await AsyncStorage.setItem('userToken', data.token);
-      console.log('Token stored:', data.token); // Debug log
+      if (data.success && data.token) {
+        // Save token to AsyncStorage
+        await AsyncStorage.setItem('userToken', data.token);
 
-      // Show alert first and navigate after user acknowledges
-      Alert.alert(
-        'Success',
-        'Logged in successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              console.log('Navigating to tabs...'); // Debug log
-              router.replace('/(tabs)/home');
-            }
-          }
-        ]
-      );
+        // Navigate to the home page
+        router.replace('/home');
+      } else {
+        throw new Error('Invalid response format.');
+      }
     } catch (error) {
-      console.error('Login error:', error); // Debug log
       Alert.alert(
-        'Login Failed', 
-        'Unable to log in. Please check your credentials and try again.'
+        'Error',
+        (error as Error).message || 'Something went wrong. Please try again.'
       );
+    } finally {
+      setIsLoading(false); // Stop loading
     }
   };
 
@@ -126,9 +129,11 @@ const LoginPage = () => {
         placeholderTextColor="#999"
         autoCapitalize="none"
         value={username}
-        onChangeText={(text) => setUsername(text)}
+        onChangeText={setUsername}
       />
-      {errors.username ? <Text style={styles.errorText}>{errors.username}</Text> : null}
+      {errors.username ? (
+        <Text style={styles.errorText}>{errors.username}</Text>
+      ) : null}
 
       {/* Password Input */}
       <View style={styles.passwordContainer}>
@@ -140,9 +145,9 @@ const LoginPage = () => {
           ]}
           placeholder="Password"
           placeholderTextColor="#999"
-          secureTextEntry={true}
+          secureTextEntry
           value={password}
-          onChangeText={(text) => setPassword(text)}
+          onChangeText={setPassword}
         />
       </View>
       {errors.password ? (
@@ -150,21 +155,17 @@ const LoginPage = () => {
       ) : null}
 
       {/* Login Button */}
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <Text style={styles.loginText}>Log In</Text>
-      </TouchableOpacity>
-
       <TouchableOpacity
-        style={[styles.loginButton, { backgroundColor: '#4CAF50' }]} // Test button styling
-        onPress={() => {
-        console.log('Navigating directly to tabs...');
-        router.replace('/(tabs)/home'); // Replace this with your desired tab path
-        }}
+        style={styles.loginButton}
+        onPress={handleLogin}
+        disabled={isLoading} // Disable button while loading
       >
-  <Text style={styles.loginText}>Test Navigate to Tabs</Text>
-</TouchableOpacity>
-
-      
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.loginText}>Log In</Text>
+        )}
+      </TouchableOpacity>
 
       {/* Create New Account */}
       <Link href="/signup" style={styles.createAccountButton}>

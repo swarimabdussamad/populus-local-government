@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 
-const ImagePickerComponent: React.FC = () => {
-  const [file, setFile] = useState<string | null>(null);
+interface ImagePickerComponentProps {
+  value: string | null;
+  onChange: (fileUri: string | null) => void;
+}
 
+const ImagePickerComponent: React.FC<ImagePickerComponentProps> = ({ value, onChange }) => {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -14,14 +17,14 @@ const ImagePickerComponent: React.FC = () => {
       );
     } else {
       const result = await ImagePicker.launchImageLibraryAsync({
-        
         allowsEditing: true,
         aspect: [1, 1],
         quality: 1,
-        base64: true, // Include base64 in the result
+        base64: false, // Change this to true if you need the base64 string
       });
       if (!result.canceled) {
-        setFile(result.assets[0].uri);
+        const fileUri = result.assets[0].uri;
+        onChange(fileUri);
       }
     }
   };
@@ -31,8 +34,8 @@ const ImagePickerComponent: React.FC = () => {
       <TouchableOpacity style={styles.button} onPress={pickImage}>
         <Text style={styles.buttonText}>Upload Photo</Text>
       </TouchableOpacity>
-      {file ? (
-        <Image source={{ uri: file }} style={styles.image} />
+      {value ? (
+        <Image source={{ uri: value }} style={styles.image} />
       ) : (
         <Text style={styles.placeholderText}>No image selected</Text>
       )}
