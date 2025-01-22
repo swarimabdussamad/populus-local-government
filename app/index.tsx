@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar'
 import {Link, Redirect} from 'expo-router';  
 
 export default function App() {
-  return <Redirect href="/map" />;
+  return <Redirect href="/login" />;
 }
 
 
