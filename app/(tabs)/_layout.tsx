@@ -63,6 +63,7 @@ const TabLayout = () => {
         headerShown: false,
         
         
+        
       })}
     >
       <Tab.Screen
