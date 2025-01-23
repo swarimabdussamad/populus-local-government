@@ -1,67 +1,107 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
-  Image,
-  StyleSheet,
   Modal,
   TextInput,
-  Animated,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from "@react-navigation/native";
+import { Picker } from '@react-native-picker/picker';
+import { useNavigation } from '@react-navigation/native';
+import styles from './Styles/shome'
+import { API_URL } from '@/constants/constants';
+
+// Interfaces for props
+interface Post {
+  id: string;
+  department: string;
+  time: string;
+  title: string;
+  message: string;
+  reactions: {
+    likes: number;
+    dislikes: number;
+    comments: any[];
+  };
+  createdAt?: string;
+}
+
+interface PostTypeModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSelectType: (type: 'announcement' | 'alert') => void;
+}
+
+interface PostModalProps {
+  visible: boolean;
+  onClose: () => void;
+  postType: 'announcement' | 'alert';
+  onSubmit: (postData: {
+    department: string;
+    time: string;
+    title: string;
+    message: string;
+    reactions: {
+      likes: number;
+      dislikes: number;
+      comments: [];
+    };
+  }) => void;
+}
 
 const WeatherCard = () => {
   const navigation = useNavigation();
 
   return (
-    <TouchableOpacity 
-      style={styles.weatherCard}
-      onPress={() => navigation.navigate('Weather')}
-    >
+    <TouchableOpacity style={styles.weatherCard}>
       <View style={styles.weatherContent}>
         <View style={styles.weatherLeft}>
           <Text style={styles.weatherTemp}>19°</Text>
           <Text style={styles.weatherLocation}>Montreal, Canada</Text>
         </View>
         <View style={styles.weatherRight}>
-          <MaterialCommunityIcons name="weather-partly-cloudy" size={40} color="#666" />
+          <MaterialCommunityIcons
+            name="weather-partly-cloudy"
+            size={40}
+            color="#666"
+          />
           <Text style={styles.weatherCondition}>Partly Cloudy</Text>
         </View>
-      </View>
-      <View style={styles.weatherFooter}>
-        <MaterialCommunityIcons name="chevron-right" size={24} color="#666" />
       </View>
     </TouchableOpacity>
   );
 };
 
-const PostTypeModal = ({ visible, onClose, onSelectType }) => (
+const PostTypeModal: React.FC<PostTypeModalProps> = ({
+  visible,
+  onClose,
+  onSelectType,
+}) => (
   <Modal
     visible={visible}
     transparent={true}
     animationType="fade"
     onRequestClose={onClose}
   >
-    <TouchableOpacity 
-      style={styles.postTypeOverlay} 
-      activeOpacity={1} 
+    <TouchableOpacity
+      style={styles.postTypeOverlay}
+      activeOpacity={1}
       onPress={onClose}
     >
       <View style={styles.postTypeContainer}>
-        <TouchableOpacity 
-          style={styles.postTypeButton} 
+        <TouchableOpacity
+          style={styles.postTypeButton}
           onPress={() => onSelectType('announcement')}
         >
           <MaterialCommunityIcons name="bullhorn" size={24} color="#6200ee" />
           <Text style={styles.postTypeText}>Announcement</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.postTypeButton} 
+
+        <TouchableOpacity
+          style={styles.postTypeButton}
           onPress={() => onSelectType('alert')}
         >
           <MaterialCommunityIcons name="alert-circle" size={24} color="#dc3545" />
@@ -72,18 +112,28 @@ const PostTypeModal = ({ visible, onClose, onSelectType }) => (
   </Modal>
 );
 
-const PostModal = ({ visible, onClose, postType, onSubmit }) => {
-  const [postContent, setPostContent] = useState('');
-  const [attachment, setAttachment] = useState(null);
-
+const PostModal: React.FC<PostModalProps> = ({
+  visible,
+  onClose,
+  postType,
+  onSubmit,
+}) => {
+  const [department, setDepartment] = useState('');
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+   
+  
   const handleSubmit = () => {
     onSubmit({
-      type: postType,
-      content: postContent,
-      attachment,
+      department,
+      time: new Date().toISOString(),
+      title,
+      message,
+      reactions: { likes: 0, dislikes: 0, comments: [] },
     });
-    setPostContent('');
-    setAttachment(null);
+    setDepartment('');
+    setTitle('');
+    setMessage('');
   };
 
   return (
@@ -96,149 +146,228 @@ const PostModal = ({ visible, onClose, postType, onSubmit }) => {
           <Text style={styles.postModalTitle}>
             {postType === 'announcement' ? 'New Announcement' : 'New Alert'}
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.postModalSubmit,
-              !postContent.trim() && styles.postModalSubmitDisabled
-            ]} 
+              !(department && title && message) && styles.postModalSubmitDisabled,
+            ]}
             onPress={handleSubmit}
-            disabled={!postContent.trim()}
+            disabled={!(department && title && message)}
           >
             <Text style={styles.postModalSubmitText}>Post</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.postModalContent}>
-          <View style={styles.postTypeIndicator}>
-            <MaterialCommunityIcons 
-              name={postType === 'announcement' ? 'bullhorn' : 'alert-circle'} 
-              size={24} 
-              color={postType === 'announcement' ? '#6200ee' : '#dc3545'} 
-            />
-            <Text style={[
-              styles.postTypeIndicatorText,
-              { color: postType === 'announcement' ? '#6200ee' : '#dc3545' }
-            ]}>
-              {postType === 'announcement' ? 'Announcement' : 'Alert'}
-            </Text>
-          </View>
-
-          <TextInput
-            style={styles.postModalInput}
-            placeholder={`Write your ${postType}...`}
-            value={postContent}
-            onChangeText={setPostContent}
-            multiline
-            textAlignVertical="top"
-          />
-
-          <TouchableOpacity 
-            style={styles.attachmentButton}
-            onPress={() => setAttachment(require('../../assets/images/01.jpg'))}
+          <Picker
+            selectedValue={department}
+            style={styles.input}
+            onValueChange={(itemValue) => setDepartment(itemValue)}
           >
-            <MaterialCommunityIcons name="image-plus" size={24} color="#666" />
-            <Text style={styles.attachmentButtonText}>Add Photo</Text>
-          </TouchableOpacity>
-
-          {attachment && (
-            <View style={styles.attachmentPreview}>
-              <Image source={attachment} style={styles.attachmentImage} />
-              <TouchableOpacity 
-                style={styles.removeAttachment}
-                onPress={() => setAttachment(null)}
-              >
-                <MaterialCommunityIcons name="close-circle" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          )}
+            <Picker.Item label="Select Department" value="" />
+            <Picker.Item label="Health Department" value="Health Department" />
+            <Picker.Item label="Police Department" value="Police Department" />
+            <Picker.Item label="Local Government" value="Local Government" />
+          </Picker>
+          <TextInput
+            style={styles.input}
+            placeholder="Title"
+            value={title}
+            onChangeText={setTitle}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Message"
+            value={message}
+            onChangeText={setMessage}
+            multiline
+          />
         </View>
       </View>
     </Modal>
   );
 };
 
-const HomeScreen = () => {
-  const [posts, setPosts] = useState([]);
+
+
+const Home = () => {
+  const [posts, setPosts] = useState<Post[]>([]);
   const [postTypeModalVisible, setPostTypeModalVisible] = useState(false);
   const [postModalVisible, setPostModalVisible] = useState(false);
-  const [selectedPostType, setSelectedPostType] = useState(null);
+  const [selectedPostType, setSelectedPostType] = useState<'announcement' | 'alert'>(
+    'announcement'
+  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handlePostTypeSelect = (type) => {
+  const handlePostTypeSelect = (type: 'announcement' | 'alert') => {
     setPostTypeModalVisible(false);
     setSelectedPostType(type);
     setPostModalVisible(true);
   };
 
-  const handlePostSubmit = async (postData) => {
-    // Here you would typically make an API call to your backend
-    try {
-      // Mock API call
-      const newPost = {
-        id: Date.now(),
-        type: postData.type,
-        content: postData.content,
-        attachment: postData.attachment,
-        timestamp: new Date().toISOString(),
-      };
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`${API_URL}/posts/display`);
+        
+        // Ensure the response is okay
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+  
+        const data = await response.json();
+  
+        // // Validate that the data is an array
+        // if (data && Array.isArray(data.announcements)) {
+        //   setPosts(data.announcements);
+        // } else {
+        //   console.error('Fetched data is not an array:', data);
+        //   setPosts([]); // Set to an empty array if the data format is unexpected
+        // }
+        const processedPosts = data.announcements.map(post => ({
+          ...post,
+          reactions: post.reactions || { 
+            likes: 0, 
+            dislikes: 0, 
+            comments: [] 
+          }
+        }));
+  
+        setPosts(processedPosts);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+        setPosts([]); // Set to an empty array in case of an error
+      }
+    };
+  
+    fetchPosts();
+  }, []);
+  
+  
 
-      // Add to local state
-      setPosts([newPost, ...posts]);
+  
+
+
+  const handlePostSubmit = async (postData: Omit<Post, 'id'>) => {
+    try {
+      const response = await fetch(`${API_URL}/posts/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postData),
+      });
+      const newPost = await response.json();
+      setPosts((prevPosts) => [newPost, ...prevPosts]);
       setPostModalVisible(false);
-      
-      // You would make your actual API call here
-      // await api.createPost(postData);
-      
     } catch (error) {
-      console.error('Failed to create post:', error);
-      alert('Failed to create post. Please try again.');
+      console.error(error);
+    }
+  };
+  
+
+  const handleDelete = async (id: string) => {
+    try {
+      await fetch(`${API_URL}/posts/delete/${id}`, { method: 'DELETE' });
+      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== id));
+    } catch (error) {
+      console.error(error);
     }
   };
 
-  const renderPost = ({ item }) => (
-    <View style={[
-      styles.postContainer,
-      item.type === 'alert' && styles.alertPost
-    ]}>
-      <View style={styles.postHeader}>
-        <View style={styles.postTypeIndicator}>
-          <MaterialCommunityIcons 
-            name={item.type === 'announcement' ? 'bullhorn' : 'alert-circle'} 
-            size={20} 
-            color={item.type === 'announcement' ? '#6200ee' : '#dc3545'} 
-          />
-          <Text style={[
-            styles.postTypeIndicatorText,
-            { color: item.type === 'announcement' ? '#6200ee' : '#dc3545' }
-          ]}>
-            {item.type === 'announcement' ? 'Announcement' : 'Alert'}
-          </Text>
-        </View>
-        <TouchableOpacity onPress={() => {/* Handle delete */}}>
-          <MaterialCommunityIcons name="delete-outline" size={20} color="#666" />
-        </TouchableOpacity>
-      </View>
+  const renderPost = ({ item }: { item: Post }) => {
+    
+    const reactions = item.reactions || { 
+      likes: 0, 
+      dislikes: 0, 
+      comments: [] 
+    };
+  
 
-      <Text style={styles.postContent}>{item.content}</Text>
-      
-      {item.attachment && (
-        <Image source={item.attachment} style={styles.postImage} />
-      )}
-      
-      <Text style={styles.postTimestamp}>
-        {new Date(item.timestamp).toLocaleString()}
-      </Text>
-    </View>
-  );
+    const getDepartmentIcon = (department: string) => {
+      switch (department) {
+        case 'Health Department':
+          return <MaterialCommunityIcons name="hospital" size={24} color="#00b894" />;
+        case 'Police Department':
+          return <MaterialCommunityIcons name="police-badge" size={24} color="#0984e3" />;
+        case 'Local Government':
+          return <MaterialCommunityIcons name="city" size={24} color="#e17055" />;
+        default:
+          return <MaterialCommunityIcons name="help-circle" size={24} color="#d63031" />;
+      }
+    };
+    const handleReaction = (type: 'like' | 'dislike') => {
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === item.id
+            ? {
+                ...post,
+                reactions: {
+                  ...post.reactions,
+                  likes: type === 'like' ? (post.reactions.likes || 0) + 1 : post.reactions.likes || 0,
+                  dislikes: type === 'dislike' ? (post.reactions.dislikes || 0) + 1 : post.reactions.dislikes || 0,
+                },
+              }
+            : post
+        )
+      );
+    };
+
+    return (
+      <View style={styles.postContainer}>
+        <View style={styles.postHeader}>
+          {getDepartmentIcon(item.department)}
+          <Text style={styles.postDepartment}>{item.department}</Text>
+          <TouchableOpacity
+            onPress={() => handleDelete(item.id)}
+            style={styles.deleteButton}
+          >
+            <MaterialCommunityIcons name="delete" size={24} color="#f44336" />
+          </TouchableOpacity>
+
+
+        </View>
+        <Text style={styles.postTitle}>{item.title}</Text>
+        <Text style={styles.postContent}>{item.message}</Text>
+        <Text style={styles.postTimestamp}>
+          {item.createdAt
+            ? new Date(item.createdAt).toLocaleString()
+            : 'Date not available'}
+        </Text>
+        <View style={styles.reactionsContainer}>
+        <TouchableOpacity
+          style={styles.reactionButton}
+          onPress={() => handleReaction('like')}
+        >
+          <MaterialCommunityIcons name="thumb-up" size={20} color="#4caf50" />
+          <Text style={styles.reactionText}>{item.reactions.likes}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.reactionButton}
+          onPress={() => handleReaction('dislike')}
+        >
+          <MaterialCommunityIcons name="thumb-down" size={20} color="#f44336" />
+          <Text style={styles.reactionText}>{item.reactions.dislikes}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.reactionButton}>
+          <MaterialCommunityIcons name="comment" size={20} color="#2196f3" />
+          <Text style={styles.reactionText}>{item.reactions.comments.length}</Text>
+        </TouchableOpacity>
+        
+      </View>
+      </View>
+    );
+  };
 
   return (
-
     <View style={styles.container}>
       <WeatherCard />
 
       <FlatList
         data={posts}
         renderItem={renderPost}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => (item.id ? item.id.toString() : Math.random().toString())}
         contentContainerStyle={styles.postsList}
       />
 
@@ -265,200 +394,7 @@ const HomeScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  weatherCard: {
-    backgroundColor: '#fff',
-    margin: 16,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  weatherContent: {
-    flexDirection: 'row',
-    padding: 16,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  weatherLeft: {
-    flex: 1,
-  },
-  weatherTemp: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  weatherLocation: {
-    fontSize: 16,
-    color: '#666',
-  },
-  weatherRight: {
-    alignItems: 'center',
-  },
-  weatherCondition: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  weatherFooter: {
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    padding: 12,
-    alignItems: 'flex-end',
-  },
-  postsList: {
-    padding: 16,
-  },
-  postContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  alertPost: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#dc3545',
-  },
-  postHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  postTypeIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  postTypeIndicatorText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  postContent: {
-    fontSize: 16,
-    color: '#333',
-    lineHeight: 24,
-  },
-  postImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginTop: 12,
-  },
-  postTimestamp: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 12,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    backgroundColor: '#6200ee',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 4,
-  },
-  postTypeOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  postTypeContainer: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 16,
-  },
-  postTypeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    gap: 12,
-  },
-  postTypeText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  postModalContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  postModalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  postModalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  postModalSubmit: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#6200ee',
-    borderRadius: 20,
-  },
-  postModalSubmitDisabled: {
-    backgroundColor: '#ccc',
-  },
-  postModalSubmitText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  postModalContent: {
-    flex: 1,
-    padding: 16,
-  },
-  postModalInput: {
-    fontSize: 16,
-    minHeight: 120,
-    marginTop: 16,
-    padding: 0,
-  },
-  attachmentButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    gap: 8,
-  },
-  attachmentButtonText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  attachmentPreview: {
-    marginTop: 16,
-    position: 'relative',
-  },
-  attachmentImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-  },
-  removeAttachment: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    borderRadius: 12,
-  },
-});
 
-export default HomeScreen;
+
+export default Home;
+  
