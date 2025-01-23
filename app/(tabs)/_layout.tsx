@@ -1,19 +1,22 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Foundation, MaterialCommunityIcons,Feather,Ionicons } from "@expo/vector-icons";
+import { Foundation, MaterialCommunityIcons, Feather, Ionicons } from "@expo/vector-icons";
 
 // Import your screens
 import Home from "@/app/(tabs)/home";
 import Weather from "@/app/(tabs)/weatherscreen";
 import Map from "@/app/(tabs)/map";
+import HouseDetails from '@/app/(tabs)/HouseDetails'; // Adjust the path if needed
 import SurveyList from "@/app/(tabs)/survey/SurveyList";
 import NewSurvey from "@/app/(tabs)/survey/NewSurvey";
 import Users from "@/app/(tabs)/users";
-import Profile from '@/app/(tabs)/profile';
+import Profile from "@/app/(tabs)/profile";
+
 const Tab = createBottomTabNavigator();
 const SurveyStack = createNativeStackNavigator();
 const HomeStack = createNativeStackNavigator();
+const MapStack = createNativeStackNavigator();
 
 // Survey Stack Navigator
 const SurveyStackNavigator = () => {
@@ -23,17 +26,17 @@ const SurveyStackNavigator = () => {
         name="SurveyList"
         component={SurveyList}
         options={{ title: "Surveys" }}
-        
       />
       <SurveyStack.Screen
         name="NewSurvey"
         component={NewSurvey}
         options={{ title: "Create New Survey" }}
-        
       />
     </SurveyStack.Navigator>
   );
 };
+
+// Home Stack Navigator
 const HomeStackNavigator = () => {
   return (
     <HomeStack.Navigator>
@@ -45,25 +48,40 @@ const HomeStackNavigator = () => {
       <HomeStack.Screen
         name="Weather"
         component={Weather}
-        options={{ title: "Weather Forecast " }}
-        
+        options={{ title: "Weather Forecast" }}
       />
     </HomeStack.Navigator>
   );
 };
 
-// Tab configuration
+// Map Stack Navigator
+const MapStackNavigator = () => {
+  return (
+    <MapStack.Navigator>
+      <MapStack.Screen
+        name="Map"
+        component={Map}
+        options={{ title: "Map View" }}
+      />
+      <MapStack.Screen
+        name="HouseDetails"
+        component={HouseDetails}
+        options={{ title: "House Details" }}
+      />
+    </MapStack.Navigator>
+  );
+};
+
+// Tab Navigator Configuration
 const TabLayout = () => {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={{
         tabBarStyle: { backgroundColor: "#161622" },
         tabBarActiveTintColor: "#fff",
         tabBarInactiveTintColor: "#888",
         headerTitleAlign: "center",
-        
-        
-      })}
+      }}
     >
       <Tab.Screen
         name="Home"
@@ -71,12 +89,12 @@ const TabLayout = () => {
         options={{
           tabBarIcon: ({ color, size }) => (
             <Foundation name="home" color={color} size={size} />
-          ), 
+          ),
         }}
       />
       <Tab.Screen
         name="Map"
-        component={Map}
+        component={MapStackNavigator} // Use Map Stack here
         options={{
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
@@ -97,7 +115,7 @@ const TabLayout = () => {
               color={color}
               size={size}
             />
-          ), 
+          ),
         }}
       />
       <Tab.Screen
