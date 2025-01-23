@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   Animated,
   Platform,
+  StatusBar,
+  SafeAreaView,
 } from 'react-native';
 import { API_URL } from '@/constants/constants';
 import { useFocusEffect } from '@react-navigation/native';
@@ -41,14 +43,7 @@ const UnverifiedUsers = () => {
 
   useEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity
-          onPress={fetchUnverifiedUsers}
-          style={styles.refreshButton}
-        >
-          <Ionicons name="refresh" size={24} color="#007AFF" />
-        </TouchableOpacity>
-      ),
+      headerShown: false,
     });
   }, [navigation]);
 
@@ -151,6 +146,34 @@ const UnverifiedUsers = () => {
     );
   };
 
+  const CustomHeader = ({ onRefresh, usersCount }) => (
+    <SafeAreaView style={styles.headerContainer}>
+      <StatusBar backgroundColor="#1e3a8a" barStyle="light-content" />
+      <View style={styles.statusBarSpace} />
+      <View style={styles.headerContent}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerTitle}>Unverified Users</Text>
+          <View style={styles.badgeContainer}>
+            <Text style={styles.badgeText}>{usersCount}</Text>
+          </View>
+        </View>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={onRefresh}
+          >
+            <Ionicons name="refresh" size={22} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerButton}
+          >
+            <Ionicons name="filter" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
+  );
+
   if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
@@ -161,32 +184,94 @@ const UnverifiedUsers = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={users}
-        renderItem={renderUserCard}
-        keyExtractor={(item) => item._id.toString()}
-        refreshing={refreshing}
-        onRefresh={() => {
-          setRefreshing(true);
-          fetchUnverifiedUsers();
-        }}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="people" size={48} color="#ccc" />
-            <Text style={styles.emptyText}>No unverified users found</Text>
-          </View>
-        }
-        contentContainerStyle={styles.listContainer}
+    <View style={styles.mainContainer}>
+      <CustomHeader 
+        onRefresh={fetchUnverifiedUsers}
+        usersCount={users.length}
       />
+      <View style={styles.container}>
+        <FlatList
+          data={users}
+          renderItem={renderUserCard}
+          keyExtractor={(item) => item._id.toString()}
+          refreshing={refreshing}
+          onRefresh={() => {
+            setRefreshing(true);
+            fetchUnverifiedUsers();
+          }}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="people" size={48} color="#ccc" />
+              <Text style={styles.emptyText}>No unverified users found</Text>
+            </View>
+          }
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
     </View>
   );
 };
 
+// Styles remain the same as in the previous version
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: '#1e3a8a',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  headerContainer: {
+    backgroundColor: '#1e3a8a',
+    paddingTop: Platform.OS === 'android' ? 1 : 0,
+  },
+  statusBarSpace: {
+    height: Platform.OS === 'ios' ? 1 : 0,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12, // Increased padding
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerButton: {
+    padding: 8,
+    marginLeft: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  badgeContainer: {
+    backgroundColor: '#4f46e5',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
+  badgeText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8fafc',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   listContainer: {
     padding: 16,
@@ -194,7 +279,7 @@ const styles = StyleSheet.create({
   },
   userCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 16,
     padding: 16,
     ...Platform.select({
@@ -202,10 +287,10 @@ const styles = StyleSheet.create({
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowRadius: 8,
       },
       android: {
-        elevation: 3,
+        elevation: 4,
       },
     }),
   },
@@ -217,7 +302,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#4f46e5',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -233,11 +318,12 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 18,
     fontWeight: '600',
+    color: '#1e293b',
     marginBottom: 4,
   },
   userDetail: {
     fontSize: 14,
-    color: '#666',
+    color: '#64748b',
     marginBottom: 2,
   },
   actionButtons: {
@@ -245,7 +331,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     marginTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: '#f1f5f9',
     paddingTop: 12,
   },
   button: {
@@ -257,10 +343,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   verifyButton: {
-    backgroundColor: '#34C759',
+    backgroundColor: '#10b981',
   },
   deleteButton: {
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#ef4444',
   },
   buttonText: {
     color: '#fff',
@@ -275,7 +361,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 8,
     fontSize: 16,
-    color: '#666',
+    color: '#64748b',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -285,12 +371,8 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 8,
     fontSize: 16,
-    color: '#666',
+    color: '#64748b',
     textAlign: 'center',
-  },
-  refreshButton: {
-    padding: 8,
-    marginRight: 8,
   },
 });
 

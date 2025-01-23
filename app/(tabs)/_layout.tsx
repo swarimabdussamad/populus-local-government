@@ -61,7 +61,8 @@ const TabLayout = () => {
         tabBarActiveTintColor: "#fff",
         tabBarInactiveTintColor: "#888",
         headerTitleAlign: "center",
-        
+        headerShown:false
+      
         
         
       })}

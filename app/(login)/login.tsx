@@ -82,7 +82,7 @@ const LoginPage = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Authentication failed.');
+        throw new Error(data.message || 'Authentication faile.');
       }
 
       if (data.success && data.token) {

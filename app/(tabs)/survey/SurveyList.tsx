@@ -6,9 +6,12 @@ import {
   TouchableOpacity, 
   Animated, 
   ScrollView,
-  Dimensions
+  Dimensions,
+  SafeAreaView,
+  StatusBar
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from '@expo/vector-icons';
 
 const Survey = () => {
   const navigation = useNavigation();
@@ -41,18 +44,7 @@ const Survey = () => {
 
   React.useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
-        <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => navigation.navigate("NewSurvey")}
-          >
-            <Text style={styles.addButtonText}>+</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      ),
-      headerTitle: "My Surveys",
-      headerTitleStyle: styles.headerTitle,
+      headerShown: false,
     });
   }, [navigation]);
 
@@ -64,17 +56,19 @@ const Survey = () => {
     >
       <View style={styles.cardContent}>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>{survey.title}</Text>
           <View style={[styles.statusDot, 
             { backgroundColor: survey.active ? '#4CAF50' : '#757575' }]} 
           />
+          <Text style={styles.cardTitle}>{survey.title}</Text>
+          <View style={[styles.responseContainer, !survey.active && styles.inactiveResponseContainer]}>
+            <Text style={styles.responseCount}>
+              {survey.responses} {survey.responses === 1 ? 'Response' : 'Responses'}
+            </Text>
+          </View>
         </View>
-        <Text style={styles.responseCount}>
-          {survey.responses} {survey.responses === 1 ? 'Response' : 'Responses'}
-        </Text>
         <View style={styles.cardFooter}>
-          <TouchableOpacity style={styles.viewButton}>
-            <Text style={styles.viewButtonText}>View Results</Text>
+          <TouchableOpacity style={[styles.viewButton, !survey.active && styles.inactiveViewButton]}>
+            <Text style={[styles.viewButtonText, !survey.active && styles.inactiveViewButtonText]}>View Results</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -82,14 +76,25 @@ const Survey = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        
+    <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor="#27395D" barStyle="light-content" />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Surveys</Text>
+        <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => navigation.navigate("NewSurvey")}
+          >
+            <Ionicons name="add" size={24} color="#fff" />
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.cardsContainer}>
           {surveys.map(renderSurveyCard)}
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -99,36 +104,29 @@ const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: '#f8fafc',
   },
   scrollView: {
     flex: 1,
   },
   header: {
-    padding: 20,
-    paddingTop: 10,
+    backgroundColor: '#1e3a8a',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#1A1A1A',
-  },
-  welcomeText: {
-    fontSize: 28,
     fontWeight: 'bold',
-    color: '#1A1A1A',
-    marginBottom: 8,
-  },
-  subText: {
-    fontSize: 16,
-    color: '#666666',
-    marginBottom: 20,
+    color: '#fff',
   },
   cardsContainer: {
     padding: 16,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fff',
     borderRadius: 16,
     marginBottom: 16,
     shadowColor: '#000',
@@ -153,19 +151,30 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1A1A1A',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    flex: 1,
+    marginHorizontal: 12,
   },
   statusDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
   },
+  responseContainer: {
+    backgroundColor: '#27395D',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  inactiveResponseContainer: {
+    backgroundColor: '#666',
+  },
   responseCount: {
-    fontSize: 16,
-    color: '#666666',
-    marginBottom: 16,
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: 'bold',
   },
   cardFooter: {
     flexDirection: 'row',
@@ -173,23 +182,28 @@ const styles = StyleSheet.create({
   },
   viewButton: {
     backgroundColor: '#27395D',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 8,
   },
+  inactiveViewButton: {
+    backgroundColor: '#666',
+  },
   viewButtonText: {
-    color: '#FFFFFF',
+    color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: 'bold',
+  },
+  inactiveViewButtonText: {
+    color: '#ccc',
   },
   addButton: {
     backgroundColor: '#27395D',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
     shadowColor: '#007AFF',
     shadowOffset: {
       width: 0,
@@ -198,11 +212,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 8,
-  },
-  addButtonText: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
   },
 });
