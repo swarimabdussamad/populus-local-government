@@ -1,8 +1,15 @@
 import { Alert, StyleSheet, Text, View, Dimensions, Image } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { API_URL } from '@/constants/constants';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 
+type RootStackParamList = {
+  Map: undefined;
+  HouseDetails: {
+    houseDetails: string;
+  };
+};
 
 interface LocationData {
   _id: string;
@@ -39,6 +46,9 @@ function Map() {
   const [locations, setLocations] = useState<FormattedLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Access navigation
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -118,9 +128,13 @@ function Map() {
     longitudeDelta: 0.02,
   };
 
+  const handleMarkerPress = (houseDetails: string) => {
+    navigation.navigate('HouseDetails', { houseDetails });
+  };
+
   if (loading) {
     return (
-      <View >
+      <View>
         <Text>Loading map data...</Text>
       </View>
     );
@@ -128,7 +142,7 @@ function Map() {
 
   if (error) {
     return (
-      <View >
+      <View>
         <Text>Error: {error}</Text>
       </View>
     );
@@ -150,12 +164,13 @@ function Map() {
           <Marker
             key={marker.id}
             coordinate={marker.coordinate}
-            anchor={{ x: 2, y: 2 }} // Adjust the anchor point for positioning
+            anchor={{ x: 2, y: 2 }}
+            onPress={() => handleMarkerPress(marker.houseDetails)}
           >
             <View style={{ alignItems: 'center' }}>
               <Image
                 source={require('@/assets/images/custom-marker.png')}
-                style={{ width: 10, height: 10, resizeMode: 'contain' }} // Resize the image here
+                style={{ width: 10, height: 10, resizeMode: 'contain' }}
               />
               <View style={styles.markerTextContainer}>
                 <Text style={styles.markerText}>{marker.houseDetails}</Text>
@@ -165,40 +180,35 @@ function Map() {
         ))}
       </MapView>
     </View>
-  
   );
-  
 }
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#f0f0f0', // Neutral background to highlight the map
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    
-    map: {
-      ...StyleSheet.absoluteFillObject, // Ensures the map fills the screen
-    },
-    markerTextContainer: {
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'rgba(255, 255, 255, 0.8)', // Semi-transparent white background
-      borderRadius: 8,
-      padding: 4,
-      borderWidth: 1,
-      borderColor: '#d4d4d4', // Light border for better visibility
-    },
-    markerText: {
-      color: 'blue', // Dark red text color
-      fontSize: 15, // Slightly smaller font size for better fit
-      fontWeight: 'bold', // Bold for emphasis
-      textAlign: 'center', // Center align the text
-    },
-  });
-      
-      
+  container: {
+    flex: 1,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  map: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  markerTextContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 8,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: '#d4d4d4',
+  },
+  markerText: {
+    color: 'blue',
+    fontSize: 15,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+});
 
-export default Map;
+export default Map; 
