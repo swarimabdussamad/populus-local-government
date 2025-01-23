@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Foundation, MaterialCommunityIcons,Feather,Ionicons } from "@expo/vector-icons";
 
 // Import your screens
-import Home from "@/app/(tabs)/home";
+import Home from "./home"
 import Weather from "@/app/(tabs)/weatherscreen";
 import Map from "@/app/(tabs)/map";
 import SurveyList from "@/app/(tabs)/survey/SurveyList";
@@ -60,7 +60,7 @@ const TabLayout = () => {
         tabBarStyle: { backgroundColor: "#161622" },
         tabBarActiveTintColor: "#fff",
         tabBarInactiveTintColor: "#888",
-        headerTitleAlign: "center",
+        headerShown: false,
         
         
       })}
