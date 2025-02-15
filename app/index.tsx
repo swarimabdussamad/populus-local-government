@@ -1,11 +1,56 @@
-import {StyleSheet, View, Text } from 'react-native'
-import React from 'react'
-import { StatusBar } from 'expo-status-bar'
-import {Link, Redirect} from 'expo-router';  
+import React, { useEffect, useState } from 'react';
+import { View, Image, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 
-export default function App() {
-  return <Redirect href="/login" />;
-}
+const SplashScreen = () => {
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        // Simulate a minimum splash screen duration
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        if (token) {
+          router.replace('/home');
+        } else {
+          router.replace('/login');
+        }
+      } catch (error) {
+        router.replace('/login');
+      }
+    };
+
+    checkSession();
+  }, []);
+
+  return (
+    <View style={styles.container}>
+      <Image
+        source={require('../assets/images/logo.png')}
+        style={styles.logo}
+        resizeMode="contain"
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  logo: {
+    width: 250,
+    height: 250,
+  },
+});
+
+export default SplashScreen;
 
 
 

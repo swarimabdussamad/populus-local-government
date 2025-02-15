@@ -14,6 +14,7 @@ import DropdownComponent from '@/components/DropdownComponent';
 import { Link, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -88,6 +89,7 @@ const LoginPage = () => {
       if (data.success && data.token) {
         // Save token to AsyncStorage
         await AsyncStorage.setItem('userToken', data.token);
+        await AsyncStorage.setItem('currentUsername', username);
 
         // Navigate to the home page
         router.replace('/home');

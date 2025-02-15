@@ -61,16 +61,17 @@ const MapStackNavigator = () => {
       <MapStack.Screen
         name="Map"
         component={Map}
-        options={{ title: "Map View" }}
+        options={{ headerShown: false }}
       />
       <MapStack.Screen
         name="HouseDetails"
         component={HouseDetails}
-        options={{ title: "House Details" }}
+        options={{ headerShown: false }}
       />
     </MapStack.Navigator>
   );
 };
+
 
 // Tab Navigator Configuration
 const TabLayout = () => {
@@ -81,6 +82,7 @@ const TabLayout = () => {
         tabBarActiveTintColor: "#fff",
         tabBarInactiveTintColor: "#888",
         headerTitleAlign: "center",
+        headerShown:false
       }}
     >
       <Tab.Screen

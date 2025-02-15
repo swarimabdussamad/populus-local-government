@@ -55,8 +55,15 @@ interface PostModalProps {
 const WeatherCard = () => {
   const navigation = useNavigation();
 
+  const handlePress = () => {
+    navigation.navigate('Weather'); // Navigate to screen named "Weather"
+  };
+
   return (
-    <TouchableOpacity style={styles.weatherCard}>
+    <TouchableOpacity 
+      style={styles.weatherCard}
+      onPress={handlePress}
+    >
       <View style={styles.weatherContent}>
         <View style={styles.weatherLeft}>
           <Text style={styles.weatherTemp}>19°</Text>

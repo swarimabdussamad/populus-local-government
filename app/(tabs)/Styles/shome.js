@@ -5,35 +5,6 @@ const styles = StyleSheet.create({
       flex: 1,
       backgroundColor: '#f5f5f5',
     },
-<<<<<<< HEAD
-    fab: {
-      position: 'absolute',
-      bottom: 16,
-      right: 16,
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      backgroundColor: '#6200ee',
-      alignItems: 'center',
-      justifyContent: 'center',
-      elevation: 5,
-    },
-    weatherCard: {
-      margin: 16,
-      padding: 16,
-      borderRadius: 12,
-      backgroundColor: '#fff',
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      elevation: 3,
-    },
-    weatherContent: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      flex: 1,
-=======
     weatherCard: {
       backgroundColor: '#fff',
       margin: 16,
@@ -49,29 +20,18 @@ const styles = StyleSheet.create({
       padding: 16,
       justifyContent: 'space-between',
       alignItems: 'center',
->>>>>>> 8da352803febadf838a30b378bef37290094de30
     },
     weatherLeft: {
       flex: 1,
     },
     weatherTemp: {
-<<<<<<< HEAD
-      fontSize: 32,
-=======
       fontSize: 36,
->>>>>>> 8da352803febadf838a30b378bef37290094de30
       fontWeight: 'bold',
       color: '#333',
     },
     weatherLocation: {
-<<<<<<< HEAD
-      fontSize: 14,
-      color: '#666',
-      marginTop: 4,
-=======
       fontSize: 16,
       color: '#666',
->>>>>>> 8da352803febadf838a30b378bef37290094de30
     },
     weatherRight: {
       alignItems: 'center',
@@ -81,18 +41,6 @@ const styles = StyleSheet.create({
       color: '#666',
       marginTop: 4,
     },
-<<<<<<< HEAD
-    postTypeOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    postTypeContainer: {
-      width: 300,
-      backgroundColor: '#fff',
-      borderRadius: 12,
-=======
     weatherFooter: {
       borderTopWidth: 1,
       borderTopColor: '#eee',
@@ -169,48 +117,26 @@ const styles = StyleSheet.create({
       backgroundColor: '#fff',
       borderTopLeftRadius: 16,
       borderTopRightRadius: 16,
->>>>>>> 8da352803febadf838a30b378bef37290094de30
       padding: 16,
     },
     postTypeButton: {
       flexDirection: 'row',
       alignItems: 'center',
-<<<<<<< HEAD
-      padding: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: '#f0f0f0',
-    },
-    postTypeText: {
-      marginLeft: 8,
-=======
       padding: 16,
       gap: 12,
     },
     postTypeText: {
->>>>>>> 8da352803febadf838a30b378bef37290094de30
       fontSize: 16,
       color: '#333',
     },
     postModalContainer: {
       flex: 1,
       backgroundColor: '#fff',
-<<<<<<< HEAD
-      padding: 16,
-=======
->>>>>>> 8da352803febadf838a30b378bef37290094de30
     },
     postModalHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-<<<<<<< HEAD
-      marginBottom: 16,
-    },
-    postModalTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#333',
-=======
       padding: 16,
       borderBottomWidth: 1,
       borderBottomColor: '#eee',
@@ -218,102 +144,18 @@ const styles = StyleSheet.create({
     postModalTitle: {
       fontSize: 18,
       fontWeight: '600',
->>>>>>> 8da352803febadf838a30b378bef37290094de30
     },
     postModalSubmit: {
       paddingVertical: 8,
       paddingHorizontal: 16,
-<<<<<<< HEAD
-      borderRadius: 8,
-      backgroundColor: '#6200ee',
-=======
       backgroundColor: '#6200ee',
       borderRadius: 20,
->>>>>>> 8da352803febadf838a30b378bef37290094de30
     },
     postModalSubmitDisabled: {
       backgroundColor: '#ccc',
     },
     postModalSubmitText: {
       color: '#fff',
-<<<<<<< HEAD
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
-    postModalContent: {
-      flex: 1,
-    },
-    input: {
-      borderWidth: 1,
-      borderColor: '#ddd',
-      borderRadius: 8,
-      padding: 12,
-      marginBottom: 16,
-      fontSize: 16,
-      color: '#333',
-    },
-    postsList: {
-      padding: 16,
-    },
-    postContainer: {
-      padding: 16,
-      marginBottom: 16,
-      borderRadius: 12,
-      backgroundColor: '#fff',
-      elevation: 3,
-    },
-    postHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    postDepartment: {
-      fontSize: 14,
-      color: '#666',
-      marginLeft: 8,
-      fontWeight: 'bold',
-    },
-    postTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#333',
-      marginBottom: 8,
-    },
-    postContent: {
-      fontSize: 14,
-      color: '#666',
-      marginBottom: 8,
-    },
-    postTimestamp: {
-      fontSize: 12,
-      color: '#aaa',
-    },
-    reactionsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        marginTop: 10,
-      },
-      reactionButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-      },
-      reactionText: {
-        marginLeft: 5,
-        fontSize: 16,
-        color: '#333',
-      },
-      postHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      },
-      deleteButton: {
-        padding: 5,
-      },
-      
-  });
-export default styles
-=======
       fontWeight: '600',
     },
     postModalContent: {
@@ -598,4 +440,3 @@ export default styles
   });
 
 export default styles;
->>>>>>> 8da352803febadf838a30b378bef37290094de30

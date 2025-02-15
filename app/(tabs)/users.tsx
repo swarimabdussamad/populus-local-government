@@ -16,6 +16,8 @@ import { API_URL } from '@/constants/constants';
 import { useFocusEffect } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const UnverifiedUsers = () => {
   const [users, setUsers] = useState([]);
@@ -32,7 +34,7 @@ const UnverifiedUsers = () => {
       }
       const data = await response.json();
       setUsers(data);
-    } catch (error) {
+    } catch {
       console.error('Error fetching unverified users:', error);
       Alert.alert('Error', 'Failed to fetch users. Please try again.');
     } finally {
@@ -52,14 +54,32 @@ const UnverifiedUsers = () => {
       fetchUnverifiedUsers();
     }, [])
   );
-
-  const handleVerify = async (user) => {
+  interface User {
+  _id: string;
+  name: string;
+  // Add other properties as needed
+}
+  const handleVerify = async (user: { name: any; _id: any; }) => {
     try {
+      const currentPresidentId = await AsyncStorage.getItem('currentUsername');
+
+      console.log('Request details:', {
+        url: `${API_URL}/government/verify-user`,
+        user,
+        presidentId: currentPresidentId
+      });
+
       const response = await fetch(`${API_URL}/government/verify-user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...user, presidentId: 'swarim' }),
+        body: JSON.stringify({ ...user, presidentId: currentPresidentId }),
+        
       });
+      
+      console.log('Response status:', response.status);
+      const responseData = await response.clone().json();
+      console.log('Response data:', responseData);
+
 
       if (!response.ok) {
         throw new Error('Failed to verify user.');
@@ -74,11 +94,11 @@ const UnverifiedUsers = () => {
       setUsers(users.filter((u) => u._id !== user._id));
     } catch (error) {
       console.error('Error verifying user:', error);
-      Alert.alert('Error', 'Failed to verify the user.');
+      Alert.alert('Error', 'Failed to verify the users.');
     }
   };
 
-  const handleDelete = async (userId, userName) => {
+  const handleDelete = async (userId: any, userName: any) => {
     Alert.alert(
       'Confirm Deletion',
       `Are you sure you want to delete ${userName}?`,
