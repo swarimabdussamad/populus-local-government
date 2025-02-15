@@ -81,8 +81,10 @@ const LoginPage = () => {
       });
 
       const data = await response.json();
+      console.log(data)
 
       if (!response.ok) {
+        console.log(data)
         throw new Error(data.message || 'Authentication faile.');
       }
 

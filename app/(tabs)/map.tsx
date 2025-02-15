@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { API_URL } from '@/constants/constants';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type RootStackParamList = {
   Map: undefined;
@@ -49,15 +50,23 @@ function Map() {
 
   // Access navigation
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  
 
   useEffect(() => {
     const fetchData = async () => {
+      const token = await AsyncStorage.getItem('userToken');
+    if (!token) {
+      alert("User token not found. Please log in again.");
+      return;
+    }
+
       try {
         setLoading(true);
         const response = await fetch(`${API_URL}/government/map`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, 
           },
         });
 
