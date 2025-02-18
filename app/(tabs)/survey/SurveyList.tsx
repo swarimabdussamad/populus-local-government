@@ -1,45 +1,76 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  TouchableOpacity, 
-  Animated, 
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Animated,
   ScrollView,
   Dimensions,
   SafeAreaView,
-  StatusBar
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
+  StatusBar,
+} from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/constants/constants';
 
-const SurveyCard = ({ survey, onPress }) => (
-  <TouchableOpacity 
+const SurveyCard = ({ survey, onPress, onComplete, isActiveTab }) => (
+  <TouchableOpacity
     style={[styles.card, !survey.active && styles.inactiveCard]}
     onPress={onPress}
   >
     <View style={styles.cardContent}>
       <View style={styles.cardHeader}>
         <Text style={styles.cardTitle}>{survey.title}</Text>
-        <View style={[styles.statusDot, 
-          { backgroundColor: survey.active ? '#4CAF50' : '#757575' }]} 
-        />
+        <View style={[styles.statusDot, { 
+          backgroundColor: survey.active ? '#4CAF50' : '#757575' 
+        }]} />
       </View>
-      <Text style={styles.responseCount}>
-        {survey.responses} {survey.responses === 1 ? 'Response' : 'Responses'}
-      </Text>
-      {survey.targetGroup && (
-        <Text style={styles.targetGroup}>Target: {survey.targetGroup}</Text>
-      )}
-      {survey.completionRate && (
-        <Text style={styles.completionRate}>Completion: {survey.completionRate}%</Text>
-      )}
-      <View style={styles.cardFooter}>
-        <TouchableOpacity style={styles.viewButton}>
-          <Text style={styles.viewButtonText}>View Results</Text>
-        </TouchableOpacity>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Question:</Text>
+        <Text style={styles.sectionText}>{survey.question}</Text>
       </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Options:</Text>
+        <View style={styles.optionsContainer}>
+          {survey.options.map((option, index) => (
+            <View key={index} style={styles.optionPill}>
+              <Text style={styles.optionText}>{option}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Created At:</Text>
+        <Text style={styles.sectionText}>
+          {new Date(survey.createdAt).toLocaleDateString()}
+        </Text>
+        <TouchableOpacity 
+            style={[styles.actionButton, styles.resultsButton]}
+            onPress={onPress}
+          >
+            <Text style={styles.buttonText}>View Results</Text>
+          </TouchableOpacity>
+          
+        
+      </View>
+
+      {isActiveTab && survey.active && (
+        <View style={styles.buttonContainer}>
+          
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.completeButton]}
+            onPress={onComplete}
+          >
+            <Text style={styles.buttonText}>Complete Survey</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   </TouchableOpacity>
 );
@@ -47,8 +78,7 @@ const SurveyCard = ({ survey, onPress }) => (
 const TabBar = ({ activeTab, onTabPress }) => {
   const tabs = [
     { id: 'active', label: 'Active' },
-    { id: 'targeted', label: 'Targeted' },
-    { id: 'completed', label: 'Completed' }
+    { id: 'completed', label: 'Completed' },
   ];
 
   return (
@@ -56,16 +86,10 @@ const TabBar = ({ activeTab, onTabPress }) => {
       {tabs.map((tab) => (
         <TouchableOpacity
           key={tab.id}
-          style={[
-            styles.tab,
-            activeTab === tab.id && styles.activeTab
-          ]}
+          style={[styles.tab, activeTab === tab.id && styles.activeTab]}
           onPress={() => onTabPress(tab.id)}
         >
-          <Text style={[
-            styles.tabText,
-            activeTab === tab.id && styles.activeTabText
-          ]}>
+          <Text style={[styles.tabText, activeTab === tab.id && styles.activeTabText]}>
             {tab.label}
           </Text>
         </TouchableOpacity>
@@ -78,59 +102,77 @@ const Survey = () => {
   const navigation = useNavigation();
   const [scaleValue] = useState(new Animated.Value(1));
   const [activeTab, setActiveTab] = useState('active');
+  const [publicSurveys, setPublicSurveys] = useState([]);
   const scrollViewRef = React.useRef(null);
-  
-  const surveys = {
-    active: [
-      { id: 1, title: "Customer Feedback", responses: 24, active: true },
-      { id: 2, title: "Product Review", responses: 15, active: true },
-    ],
-    targeted: [
-      { 
-        id: 3, 
-        title: "Premium User Experience", 
-        responses: 45, 
-        active: true,
-        targetGroup: "Premium Subscribers",
-        completionRate: 75
-      },
-      { 
-        id: 4, 
-        title: "New Feature Feedback", 
-        responses: 30, 
-        active: true,
-        targetGroup: "Beta Users",
-        completionRate: 60
-      },
-    ],
-    completed: [
-      { 
-        id: 5, 
-        title: "Annual Satisfaction Survey", 
-        responses: 1000, 
-        active: false,
-        completionRate: 100
-      },
-      { 
-        id: 6, 
-        title: "Platform Usage Survey", 
-        responses: 850, 
-        active: false,
-        completionRate: 100
-      },
-    ]
+
+  const activeSurveys = publicSurveys.filter((survey) => survey.active);
+  const completedSurveys = publicSurveys.filter((survey) => !survey.active);
+
+  const fetchData = async () => {
+    const token = await AsyncStorage.getItem('userToken');
+    if (!token) {
+      alert('User token not found. Please log in again.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/government/mysurvey`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch surveys');
+      
+      const data = await response.json();
+      if (Array.isArray(data.surveys)) {
+        setPublicSurveys(data.surveys);
+      }
+    } catch (error) {
+      console.error('Error fetching surveys:', error);
+      alert('Failed to fetch surveys');
+    }
   };
+
+  const handleCompleteSurvey = async (surveyId) => {
+    const token = await AsyncStorage.getItem('userToken');
+    try {
+      const response = await fetch(`${API_URL}/government/completesurvey`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ surveyId }),
+      });
+
+      if (response.ok) {
+        fetchData();
+        alert('Survey marked as completed!');
+      } else {
+        throw new Error('Failed to complete survey');
+      }
+    } catch (error) {
+      console.error('Error completing survey:', error);
+      alert('Failed to complete survey');
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => { fetchData(); }, [])
+  );
 
   const handleTabPress = (tabId) => {
     setActiveTab(tabId);
-    const tabIndex = ['active', 'targeted', 'completed'].indexOf(tabId);
+    const tabIndex = ['active', 'completed'].indexOf(tabId);
     scrollViewRef.current?.scrollTo({
       x: tabIndex * Dimensions.get('window').width,
-      animated: true
+      animated: true,
     });
   };
 
-  // Floating button animation
   const pulseAnimation = () => {
     Animated.sequence([
       Animated.timing(scaleValue, {
@@ -146,9 +188,7 @@ const Survey = () => {
     ]).start(() => pulseAnimation());
   };
 
-  useEffect(() => {
-    pulseAnimation();
-  }, []);
+  useEffect(() => { pulseAnimation(); }, []);
 
   React.useLayoutEffect(() => {
     navigation.setOptions({
@@ -163,7 +203,7 @@ const Survey = () => {
               <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
                 <TouchableOpacity
                   style={styles.addButton}
-                  onPress={() => navigation.navigate("NewSurvey")}
+                  onPress={() => navigation.navigate('NewSurvey')}
                 >
                   <Ionicons name="add" size={24} color="#fff" />
                 </TouchableOpacity>
@@ -180,10 +220,8 @@ const Survey = () => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const screenWidth = Dimensions.get('window').width;
     const tabIndex = Math.round(contentOffsetX / screenWidth);
-    const tabId = ['active', 'targeted', 'completed'][tabIndex];
-    if (activeTab !== tabId) {
-      setActiveTab(tabId);
-    }
+    const tabId = ['active', 'completed'][tabIndex];
+    if (activeTab !== tabId) setActiveTab(tabId);
   };
 
   return (
@@ -195,45 +233,31 @@ const Survey = () => {
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleScroll}
       >
-        {/* Active Surveys Tab */}
-        <View style={[styles.tabContent, { width: Dimensions.get('window').width }]}>
+        <View style={styles.tabContent}>
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.cardsContainer}>
-              {surveys.active.map((survey) => (
+              {activeSurveys.map((survey) => (
                 <SurveyCard
-                  key={survey.id}
+                  key={survey._id}
                   survey={survey}
-                  onPress={() => navigation.navigate("SurveyDetail", { survey })}
+                  isActiveTab={activeTab === 'active'}
+                  onPress={() => navigation.navigate('SurveyDetail', { survey })}
+                  onComplete={() => handleCompleteSurvey(survey._id)}
                 />
               ))}
             </View>
           </ScrollView>
         </View>
 
-        {/* Targeted Surveys Tab */}
-        <View style={[styles.tabContent, { width: Dimensions.get('window').width }]}>
+        <View style={styles.tabContent}>
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.cardsContainer}>
-              {surveys.targeted.map((survey) => (
+              {completedSurveys.map((survey) => (
                 <SurveyCard
-                  key={survey.id}
+                  key={survey._id}
                   survey={survey}
-                  onPress={() => navigation.navigate("SurveyDetail", { survey })}
-                />
-              ))}
-            </View>
-          </ScrollView>
-        </View>
-
-        {/* Completed Surveys Tab */}
-        <View style={[styles.tabContent, { width: Dimensions.get('window').width }]}>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <View style={styles.cardsContainer}>
-              {surveys.completed.map((survey) => (
-                <SurveyCard
-                  key={survey.id}
-                  survey={survey}
-                  onPress={() => navigation.navigate("SurveyDetail", { survey })}
+                  isActiveTab={false}
+                  onPress={() => navigation.navigate('SurveyDetail', { survey })}
                 />
               ))}
             </View>
@@ -244,9 +268,6 @@ const Survey = () => {
   );
 };
 
-export default Survey;
-
-const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -263,18 +284,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   headerTitle: {
     fontSize: 25,
     fontWeight: 'bold',
     color: '#ffffff',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   tabBar: {
     flexDirection: 'row',
@@ -301,7 +314,7 @@ const styles = StyleSheet.create({
     color: '#1e3a8a',
   },
   tabContent: {
-    flex: 1,
+    width: Dimensions.get('window').width,
   },
   cardsContainer: {
     padding: 16,
@@ -311,16 +324,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
-  },
-  inactiveCard: {
-    opacity: 0.7,
   },
   cardContent: {
     padding: 20,
@@ -329,10 +336,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
     color: '#1A1A1A',
   },
@@ -341,35 +348,59 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
   },
-  responseCount: {
-    fontSize: 16,
-    color: '#666666',
-    marginBottom: 8,
-  },
-  targetGroup: {
-    fontSize: 14,
-    color: '#666666',
-    marginBottom: 8,
-  },
-  completionRate: {
-    fontSize: 14,
-    color: '#4CAF50',
+  section: {
     marginBottom: 16,
   },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  viewButton: {
-    backgroundColor: '#27395D',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  viewButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
+  sectionLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
     fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  sectionText: {
+    fontSize: 16,
+    color: '#333',
+    lineHeight: 24,
+  },
+  optionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  optionPill: {
+    backgroundColor: '#F0F4FF',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  optionText: {
+    fontSize: 14,
+    color: '#1e3a8a',
+    fontWeight: '500',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  resultsButton: {
+    backgroundColor: '#4CAF50',
+  },
+  completeButton: {
+    backgroundColor: '#1e3a8a',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
   },
   addButton: {
     backgroundColor: '#1e3a8a',
@@ -380,12 +411,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 16,
     shadowColor: '#007AFF',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 8,
   },
+  inactiveCard: {
+    opacity: 0.7,
+  },
 });
+
+export default Survey;
