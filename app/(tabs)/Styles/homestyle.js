@@ -260,6 +260,7 @@ const styles = StyleSheet.create({
 
   /** Post Container **/
   postContainer: {
+    position: 'relative',
     backgroundColor: COLORS.white,
     borderRadius: 12,
     marginHorizontal: 12,
@@ -282,6 +283,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
 
   },
+  headerContent: {
+    flex: 1,
+  },
   departmentBadgeText: {
     color: COLORS.white,
     fontSize: 14,
@@ -291,6 +295,7 @@ const styles = StyleSheet.create({
   postDate: {
     fontSize: 12,
     color: COLORS.subtext,
+    marginLeft: 35,
   },
   postTitle: {
     fontSize: 18,
@@ -466,17 +471,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   departmentInfo: {
-    flexDirection: 'row', // ✅ Icon & text in a row
-    alignItems: 'center', // ✅ Vertically aligned
-    gap: 6, // ✅ Adds spacing between icon & text
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
   },
-  
+  postHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
   departmentText: {
     fontSize: 16,
     color: '#3f3f3f', // ✅ Professional deep blue color 
     textTransform: 'capitalize'// ✅ Makes it more eye-catching
   },
-  
+  postImage: {
+    width: '100%', // Make the image take the full width of the container
+    height: 200, // Set a fixed height or adjust as needed
+    borderRadius: 8, // Optional: Add rounded corners
+    marginTop: 10, // Add some spacing above the image
+    marginBottom: 10, // Add some spacing below the image
+  },
+  imagePreviewContainer: {
+    marginTop: 16,
+    position: 'relative',
+  },
+  imagePreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 4,
+  },
+  deleteButton: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    padding: 8,
+  },
    });
 
 export default styles;

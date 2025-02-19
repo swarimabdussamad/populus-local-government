@@ -16,7 +16,7 @@ import {
   Pressable,
   RefreshControl,
 } from 'react-native';
-
+import { PermissionsAndroid} from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -24,7 +24,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { API_URL } from '@/constants/constants';
 import styles from "./Styles/homestyle";
 import { launchImageLibrary, ImageLibraryOptions, MediaType, ImagePickerResponse } from 'react-native-image-picker';
-
+import * as ImagePicker from 'expo-image-picker';
 
 const COLORS = {
   primary: '#2C3E50', // Deep navy blue
@@ -318,99 +318,102 @@ const Home = () => {
     }
   };
 
-  const handleLike = (postId: string) => handleReaction(postId, 'like');
-  const handleDislike = (postId: string) => handleReaction(postId, 'dislike');
-
-
   const handleComment = (postId: string) => {
     // Navigate to comments screen or show comment modal
     Alert.alert('Coming Soon', 'Comments feature will be available soon!');
   };
 
+  const [image, setImage] = useState<string | null>(null);
 
-  const uploadToCloudinary = async (uri: string): Promise<string | null> => {
+  const handleImageUpload = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      alert('Camera roll permission is required!');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setImageUploading(true); // Start loading indicator
+      const imageUrl = await uploadToCloudinary(result.assets[0].uri); // Upload image and get URL
+      setNewPost((prev) => ({ ...prev, imageUri: imageUrl })); // Update newPost with the image URL
+      setImageUploading(false); // Stop loading indicator
+    }
+  };
+  const uploadToCloudinary = async (uri: string) => {
     try {
-      setImageUploading(true);
-      const imageData = new FormData();
-      
-      // Extract filename and type
+      // Create the FormData object for the image
+      const imagedata = new FormData();
+  
+      // Extract the file name and type from the URI
       const filename = uri.split('/').pop();
       const match = /\.(\w+)$/.exec(filename || '');
       const type = match ? `image/${match[1]}` : 'image/jpeg';
-      
-      // Append image file
-      imageData.append('file', {
-        uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+  
+      // Append the file data in the correct format for React Native
+      imagedata.append('file', {
+        uri,
         name: filename || 'upload.jpg',
         type,
-      } as any);
-      
-      // Add upload preset
-      imageData.append('upload_preset', 'profilepic');
-      
-      const response = await axios.post(
+      }as any);
+  
+      // Append the upload preset
+      imagedata.append('upload_preset', 'post_images');
+  
+      // Make the request to Cloudinary
+      const uploadResponse = await axios.post(
         'https://api.cloudinary.com/v1_1/dnwlvkrqs/image/upload',
-        imageData,
+        imagedata,
         {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         }
       );
+  
+      // Get the secure URL of the uploaded image
+      const imageUrl = uploadResponse.data.secure_url;
+      console.log('Uploaded:', imageUrl);
       
-      return response.data.secure_url;
+      return imageUrl; // Return the image URL
+      
     } catch (error) {
       console.error('Cloudinary upload failed:', error);
       Alert.alert('Upload Failed', 'Could not upload the image. Please try again.');
-      return null;
-    } finally {
-      setImageUploading(false);
     }
   };
+ 
 
-
-  const handleImageUpload = async () => {
-    const options: ImageLibraryOptions = {
-      mediaType: 'photo' as MediaType,
-      quality: 0.8,
-      maxWidth: 1200,
-      maxHeight: 1200,
-    };
-    
-
+  const handleDeletePost = async (postId: string) => {
     try {
-      const response = await new Promise<ImagePickerResponse>((resolve) => {
-        launchImageLibrary(options, resolve);
-      });
+      // Confirm deletion with the user
+      Alert.alert(
+        'Delete Post',
+        'Are you sure you want to delete this post?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', onPress: async () => {
+            console.log(postId);
+            // Call the API to delete the post
+            await axios.delete(`${API_URL}/posts/delete/${postId}`);
+            
+            // Remove the post from the local state
+            setPosts((prevPosts) => prevPosts.filter((post) => post._id !== postId));
+            
+            Alert.alert('Success', 'Post deleted successfully.');
 
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
-        return;
-      }
-
-      if (response.errorCode) {
-        console.log('Image picker error: ', response.errorMessage);
-        return;
-      }
-
-      if (!response.assets || response.assets.length === 0) {
-        console.log('No assets selected');
-        return;
-      }
-
-      const asset = response.assets[0];
-      if (asset && asset.uri) {
-        const cloudinaryUrl = await uploadToCloudinary(asset.uri);
-        if (cloudinaryUrl) {
-          setNewPost((prev) => ({
-            ...prev,
-            imageUri: cloudinaryUrl,
-          }));
-        }
-      }
+            fetchPosts();
+          }},
+        ]
+      );
     } catch (error) {
-      console.error('Image upload error:', error);
-      Alert.alert('Error', 'Failed to upload image. Please try again.');
+      Alert.alert('Error', 'Failed to delete the post. Please try again.');
+      console.error('Delete post error:', error);
     }
   };
 
@@ -434,17 +437,17 @@ const Home = () => {
     if (!validatePost()) return;
 
       try {
-        const postData = {
+         const postData = {
           department: newPost.department,
           title: newPost.title.trim(),
           message: newPost.message.trim(),
           imageUri: newPost.imageUri,
         };
 
-        //console.log("Submitting post:", Object.fromEntries(postData.entries())); // Debugging
+        console.log("Before Submitting post:", postData); // Debugging
 
         const response = await axios.post(`${API_URL}/posts/create`, postData);
-        console.log('Post submission response:', response.data);
+        console.log('After Post submission response:', response.data);
         
         const newPostData = response.data;
         setPosts((prevPosts) => [{
@@ -483,7 +486,7 @@ const Home = () => {
     return (
       <View style={styles.postContainer}>
         <View style={styles.postHeader}>
-          <View>
+          <View style={styles.headerContent}>
           {department && (
           <View style={styles.departmentInfo}>
             <DepartmentIcon 
@@ -495,18 +498,27 @@ const Home = () => {
             </Text>
             </View>
             )}
-          </View>
-             
-        
+          
           <Text style={styles.postDate}>
             {new Date(item.createdAt).toLocaleDateString(undefined, {
               year: 'numeric',
               month: 'short',
               day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
             })}
           </Text>
         </View>
         
+         {/* Add Delete Icon */}
+         <TouchableOpacity
+          onPress={() => handleDeletePost(item._id)}
+          style={styles.deleteButton}
+        >
+          <Icon name="trash-outline" size={20} color={COLORS.error} />
+        </TouchableOpacity>
+      </View>
+
         <Text style={styles.postTitle}>{item.title}</Text>
         {item.imageUri && (
           <Image
@@ -514,7 +526,7 @@ const Home = () => {
             style={styles.postImage}
             resizeMode="cover"
           />
-        )}
+         )}
         <Text style={styles.postContent}>{item.message}</Text>
         
         <View style={styles.postActions}>
@@ -631,38 +643,38 @@ const Home = () => {
               textAlignVertical="top"
             />
 
-            <TouchableOpacity
-              style={styles.imageUploadButton}
-              onPress={handleImageUpload}
-              disabled={imageUploading}
-            >
-              {imageUploading ? (
-              <ActivityIndicator size="small" color={COLORS.secondary} />
-            ) : (
-              <>
-                <Icon name="image-outline" size={24} color={COLORS.secondary} />
-                <Text style={styles.imageUploadText}>
-                  {newPost.imageUri ? 'Change Image' : 'Add Image'}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
+{newPost.imageUri ? (
+  <View style={styles.imagePreviewContainer}>
+    <Image
+      source={{ uri: newPost.imageUri }}
+      style={styles.imagePreview}
+      resizeMode="cover"
+    />
+    <TouchableOpacity
+      style={styles.removeImageButton}
+      onPress={() => setNewPost((prev) => ({ ...prev, imageUri: null }))}
+    >
+      <Icon name="close-circle" size={24} color={COLORS.error} />
+    </TouchableOpacity>
+  </View>
+) : (
+  <TouchableOpacity
+    style={styles.imageUploadButton}
+    onPress={handleImageUpload}
+    disabled={imageUploading}
+  >
+    {imageUploading ? (
+      <ActivityIndicator size="small" color={COLORS.secondary} />
+    ) : (
+      <>
+        <Icon name="image-outline" size={24} color={COLORS.secondary} />
+        <Text style={styles.imageUploadText}>Add Image</Text>
+      </>
+    )}
+  </TouchableOpacity>
+)}
 
-            {newPost.imageUri && (
-              <View style={styles.imagePreviewContainer}>
-                <Image
-                  source={{ uri: newPost.imageUri }}
-                  style={styles.imagePreview}
-                  resizeMode="cover"
-                />
-                <TouchableOpacity
-                  style={styles.removeImageButton}
-                  onPress={() => setNewPost((prev) => ({ ...prev, imageUri: null }))}
-                >
-                  <Icon name="close-circle" size={24} color={COLORS.error} />
-                </TouchableOpacity>
-              </View>
-            )}
+
 
             <TouchableOpacity
               style={styles.submitButton}
