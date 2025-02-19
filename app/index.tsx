@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { Platform } from 'react-native';
+
+
 
 const SplashScreen = () => {
   const router = useRouter();
