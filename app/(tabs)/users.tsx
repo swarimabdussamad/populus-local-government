@@ -6,6 +6,7 @@ import {
   FlatList,
   StyleSheet,
   Alert,
+  Image,
   ActivityIndicator,
   Animated,
   Platform,
@@ -136,9 +137,17 @@ const UnverifiedUsers = () => {
       <UserCard style={styles.userCard}>
         <View style={styles.userHeader}>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>
-              {item.name.charAt(0).toUpperCase()}
-            </Text>
+            {item.photo ? (
+              <Image 
+                source={{ uri: item.photo }} 
+                style={styles.avatarImage}
+                defaultSource={require('@/assets/images/logo.png')}
+              />
+            ) : (
+              <Text style={styles.avatarText}>
+                {item.name.charAt(0).toUpperCase()}
+              </Text>
+            )}
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{item.name}</Text>
@@ -393,6 +402,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#64748b',
     textAlign: 'center',
+  },
+  avatarContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#4f46e5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    overflow: 'hidden', // This ensures the image stays within the circular container
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
 });
 
