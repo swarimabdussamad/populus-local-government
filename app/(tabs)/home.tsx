@@ -232,6 +232,107 @@ const DepartmentPicker: React.FC<{
   );
 };
 
+// Comment Modal Component
+const CommentModal: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+  postId: string;
+  comments: Comment[];
+  onAddComment: (comment: string) => Promise<void>;
+}> = ({ visible, onClose, postId, comments, onAddComment }) => {
+  const [newComment, setNewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!newComment.trim()) return;
+    
+    setIsSubmitting(true);
+    try {
+      await onAddComment(newComment.trim());
+      setNewComment('');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to post comment. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const renderComment = ({ item }: { item: Comment }) => (
+    <View style={styles.commentItem}>
+      <View style={styles.commentHeader}>
+        <Text style={styles.username}>{item.username}</Text>
+        <Text style={styles.commentTime}>
+          {new Date(item.createdAt).toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
+        </Text>
+      </View>
+      <Text style={styles.commentMessage}>{item.message}</Text>
+    </View>
+  );
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.commentModalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Comments</Text>
+            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+              <Icon name="close" size={24} color={COLORS.text} />
+            </TouchableOpacity>
+          </View>
+
+          <FlatList
+            data={comments}
+            renderItem={renderComment}
+            keyExtractor={(item, index) => index.toString()}
+            contentContainerStyle={styles.commentsList}
+            ListEmptyComponent={
+              <View style={styles.emptyComments}>
+                <Icon name="chatbubbles-outline" size={48} color={COLORS.subtext} />
+                <Text style={styles.emptyCommentsText}>No comments yet. Be the first to comment!</Text>
+              </View>
+            }
+          />
+
+          <View style={styles.commentInput}>
+            <TextInput
+              style={styles.commentTextInput}
+              placeholder="Write a comment..."
+              placeholderTextColor={COLORS.subtext}
+              value={newComment}
+              onChangeText={setNewComment}
+              multiline
+            />
+            <TouchableOpacity
+              style={[
+                styles.commentSubmitButton,
+                (!newComment.trim() || isSubmitting) && styles.commentSubmitButtonDisabled
+              ]}
+              onPress={handleSubmit}
+              disabled={!newComment.trim() || isSubmitting}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color={COLORS.white} />
+              ) : (
+                <Icon name="send" size={20} color={COLORS.white} />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 
 // Main Home Component
 const Home = () => {
@@ -245,6 +346,8 @@ const Home = () => {
     message: '',
     imageUri:  null as string | null,
   });
+  const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   // Fetch posts from the backend
   useEffect(() => {
@@ -319,8 +422,41 @@ const Home = () => {
   };
 
   const handleComment = (postId: string) => {
-    // Navigate to comments screen or show comment modal
-    Alert.alert('Coming Soon', 'Comments feature will be available soon!');
+    console.log("postId:", postId);
+    console.log("Request URL:", `${API_URL}/posts/${postId}/addcomments`);
+
+    setSelectedPostId(postId);
+    setCommentModalVisible(true);
+  };
+
+  const handleAddComment = async (postId: string, message: string) => {
+    console.log( "postID" ,postId  );
+    console.log("message",message);
+    try {
+      const response = await axios.post(`${API_URL}/posts/${postId}/comments`, {
+        username: 'Sreekrishnapuram', // Replace with actual username
+        message
+      });
+      console.log(response);
+      // Update local state with new comment
+      setPosts(posts.map(post => {
+        if (post._id === postId) {
+          return {
+            ...post,
+            reactions: {
+              ...post.reactions,
+              comments: [...post.reactions.comments, response.data]
+            }
+          };
+        }
+        return post;
+      }));
+
+      return response.data;
+    } catch (error) {
+      console.error('Add comment error:', error);
+      throw error;
+    }
   };
 
   const [image, setImage] = useState<string | null>(null);
@@ -442,6 +578,7 @@ const Home = () => {
           title: newPost.title.trim(),
           message: newPost.message.trim(),
           imageUri: newPost.imageUri,
+          access: ["sreekrishnapuram"] ,
         };
 
         console.log("Before Submitting post:", postData); // Debugging
@@ -449,23 +586,8 @@ const Home = () => {
         const response = await axios.post(`${API_URL}/posts/create`, postData);
         console.log('After Post submission response:', response.data);
         
-        const newPostData = response.data;
-        setPosts((prevPosts) => [{
-          _id: newPostData._id,
-          department: newPostData.department,
-          time: new Date(newPostData.time),
-          title: newPostData.title,
-          message: newPostData.message,
-          imageUri: newPostData.imageUri, 
-          reactions: {
-            likes: 0,
-            dislikes: 0,
-            comments: []
-          },
-          createdAt: new Date(newPostData.createdAt),
-          hasLiked: false,
-          hasDisliked: false
-        }, ...prevPosts]);
+        fetchPosts();
+
         setModalVisible(false);
         setNewPost({ department: '', title: '', message: '', imageUri: null });
         Alert.alert('Success', 'Your post has been published successfully.');
@@ -562,6 +684,15 @@ const Home = () => {
             <Text style={styles.actionText}>{item.reactions.comments.length}</Text>
           </TouchableOpacity>
         </View>
+        {selectedPostId === item._id && (
+          <CommentModal
+            visible={commentModalVisible}
+            onClose={() => setCommentModalVisible(false)}
+            postId={item._id}
+            comments={item.reactions.comments}
+            onAddComment={(message) => handleAddComment(item._id, message)}
+          />
+        )}
       </View>
     );
   };

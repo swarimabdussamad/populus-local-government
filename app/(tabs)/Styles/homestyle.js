@@ -516,6 +516,80 @@ const styles = StyleSheet.create({
     top: 0,
     padding: 8,
   },
+  commentModalContent: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    height: '80%',
+    width: '100%',
+    paddingTop: 20,
+  },
+  commentsList: {
+    padding: 16,
+  },
+  commentItem: {
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  username: {
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  commentTime: {
+    fontSize: 12,
+    color: COLORS.subtext,
+  },
+  commentMessage: {
+    color: COLORS.text,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  commentInput: {
+    flexDirection: 'row',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    backgroundColor: COLORS.white,
+  },
+  commentTextInput: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    maxHeight: 100,
+    color: COLORS.text,
+  },
+  commentSubmitButton: {
+    backgroundColor: COLORS.secondary,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  commentSubmitButtonDisabled: {
+    backgroundColor: COLORS.border,
+  },
+  emptyComments: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  emptyCommentsText: {
+    marginTop: 16,
+    color: COLORS.subtext,
+    textAlign: 'center',
+  },
    });
 
 export default styles;
