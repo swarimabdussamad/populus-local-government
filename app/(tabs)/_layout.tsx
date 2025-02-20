@@ -12,6 +12,7 @@ import SurveyList from "@/app/(tabs)/survey/SurveyList";
 import NewSurvey from "@/app/(tabs)/survey/NewSurvey";
 import Users from "@/app/(tabs)/users";
 import Profile from "@/app/(tabs)/profile";
+import SurveyResults from "./survey/SurveyResult";
 
 const Tab = createBottomTabNavigator();
 const SurveyStack = createNativeStackNavigator();
@@ -26,6 +27,11 @@ const SurveyStackNavigator = () => {
         name="SurveyList"
         component={SurveyList}
         options={{ title: "Surveys" }}
+      />
+      <SurveyStack.Screen
+        name="SurveyResults"
+        component={SurveyResults}
+        options={{ title: "result" }}
       />
       <SurveyStack.Screen
         name="NewSurvey"

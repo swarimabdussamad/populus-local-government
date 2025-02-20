@@ -26,12 +26,12 @@ type SurveyType = {
 
 type SurveyCardProps = {
   survey: SurveyType;
-  onViewResults: () => void;
+  onPress: () => void;
   onComplete?: () => void;
   isActiveTab: boolean;
 };
 
-const SurveyCard = ({ survey, onViewResults, onComplete, isActiveTab }: SurveyCardProps) => {
+const SurveyCard = ({ survey, onPress, onComplete, isActiveTab }: SurveyCardProps) => {
   const [scaleAnim] = useState(new Animated.Value(1));
 
   const handlePressIn = () => {
@@ -50,12 +50,7 @@ const SurveyCard = ({ survey, onViewResults, onComplete, isActiveTab }: SurveyCa
 
   return (
     <Animated.View style={[styles.cardContainer, { transform: [{ scale: scaleAnim }] }, !survey.active && styles.inactiveCard]}>
-      <TouchableOpacity 
-        style={styles.card} 
-        onPressIn={handlePressIn} 
-        onPressOut={handlePressOut} 
-        activeOpacity={0.9}
-      >
+      <TouchableOpacity style={styles.card} onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut} activeOpacity={0.9}>
         <LinearGradient colors={survey.active ? ['#ffffff', '#f0f9ff'] : ['#ffffff', '#f5f5f5']} style={styles.cardContent}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>{survey.title}</Text>
@@ -78,10 +73,7 @@ const SurveyCard = ({ survey, onViewResults, onComplete, isActiveTab }: SurveyCa
           <View style={styles.footer}>
             <Text style={styles.dateText}>Created: {new Date(survey.createdAt).toLocaleDateString()}</Text>
             <View style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={[styles.actionButton, styles.resultsButton]} 
-                onPress={onViewResults}
-              >
+              <TouchableOpacity style={[styles.actionButton, styles.resultsButton]} onPress={onPress}>
                 <Ionicons name="bar-chart-outline" size={18} color="#fff" />
                 <Text style={styles.buttonText}>View Results</Text>
               </TouchableOpacity>
@@ -258,7 +250,7 @@ const Survey = () => {
                     key={survey._id}
                     survey={survey}
                     isActiveTab={activeTab === 'active'}
-                    onViewResults={() => navigation.navigate('SurveyResults', { surveyId: survey._id })}
+                    onPress={() => navigation.navigate('SurveyResults', { surveyId: survey._id })}
                     onComplete={() => handleCompleteSurvey(survey._id)}
                   />
                 ))
@@ -277,7 +269,7 @@ const Survey = () => {
                     key={survey._id}
                     survey={survey}
                     isActiveTab={false}
-                    onViewResults={() => navigation.navigate('SurveyResults', { surveyId: survey._id })}
+                    onPress={() => navigation.navigate('SurveyResults', { surveyId: survey._id })}
                   />
                 ))
               ) : (
@@ -291,59 +283,58 @@ const Survey = () => {
   );
 };
 
-// Keep the styles object from the original question (same as provided earlier)
-// Make sure to include all the StyleSheet definitions shown in the original code
-
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: '#F8FAFC',
   },
   headerContainer: {
     backgroundColor: '#1e3a8a',
-    paddingTop: Platform.OS === 'android' ? 25 : 0,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 16,
   },
   headerLeft: {
     flex: 1,
-    justifyContent: 'center',
   },
   headerRight: {
-    justifyContent: 'center',
+    flex: 1,
     alignItems: 'flex-end',
   },
   headerTitle: {
-    fontSize: 25,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#ffffff',
   },
-
   tabBar: {
     flexDirection: 'row',
     backgroundColor: '#1e3a8a',
     paddingHorizontal: 16,
     paddingBottom: 12,
+    gap: 12,
   },
   tab: {
-    paddingVertical: 8,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    marginRight: 16,
-    borderRadius: 20,
+    borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    gap: 8,
   },
   activeTab: {
     backgroundColor: '#ffffff',
   },
   tabText: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   activeTabText: {
@@ -355,15 +346,18 @@ const styles = StyleSheet.create({
   cardsContainer: {
     padding: 16,
   },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+  cardContainer: {
     marginBottom: 16,
+  },
+  card: {
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+    overflow: 'hidden',
   },
   cardContent: {
     padding: 20,
@@ -376,27 +370,32 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#1A1A1A',
+    fontWeight: '700',
+    color: '#1e293b',
+    flex: 1,
+    marginRight: 12,
   },
   statusDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
+    borderWidth: 2,
+    borderColor: 'white',
   },
   section: {
     marginBottom: 16,
   },
   sectionLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
+    fontSize: 13,
+    color: '#64748b',
+    marginBottom: 8,
     fontWeight: '600',
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   sectionText: {
     fontSize: 16,
-    color: '#333',
+    color: '#334155',
     lineHeight: 24,
   },
   optionsContainer: {
@@ -405,33 +404,48 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   optionPill: {
-    backgroundColor: '#F0F4FF',
+    backgroundColor: '#f1f5f9',
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   optionText: {
     fontSize: 14,
-    color: '#1e3a8a',
+    color: '#475569',
     fontWeight: '500',
+  },
+  footer: {
+    marginTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    paddingTop: 16,
+  },
+  dateText: {
+    fontSize: 13,
+    color: '#64748b',
+    marginBottom: 12,
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
     gap: 12,
   },
   actionButton: {
     flex: 1,
+    flexDirection: 'row',
     paddingVertical: 12,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    borderRadius: 10,
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   resultsButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#2563eb',
   },
   completeButton: {
-    backgroundColor: '#1e3a8a',
+    backgroundColor: '#059669',
   },
   buttonText: {
     color: 'white',
@@ -439,21 +453,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   addButton: {
-    backgroundColor: '#1e3a8a',
-    width: 40,
-    height: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    width: 44,
+    height: 44,
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   inactiveCard: {
     opacity: 0.7,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  emptyStateText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#94a3b8',
+    textAlign: 'center',
   },
 });
 
