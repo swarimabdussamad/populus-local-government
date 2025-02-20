@@ -36,7 +36,7 @@ const SurveyCard = ({ survey, onViewResults, onComplete, isActiveTab }: SurveyCa
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.95,
+      toValue: 0.98,
       useNativeDriver: true,
     }).start();
   };
@@ -49,57 +49,86 @@ const SurveyCard = ({ survey, onViewResults, onComplete, isActiveTab }: SurveyCa
   };
 
   return (
-    <Animated.View style={[styles.cardContainer, { transform: [{ scale: scaleAnim }] }, !survey.active && styles.inactiveCard]}>
+    <Animated.View 
+      style={[
+        styles.cardContainer,
+        { transform: [{ scale: scaleAnim }] },
+        !survey.active && styles.inactiveCard
+      ]}
+    >
       <TouchableOpacity 
-        style={styles.card} 
-        onPressIn={handlePressIn} 
-        onPressOut={handlePressOut} 
+        style={styles.card}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         activeOpacity={0.9}
       >
-        <LinearGradient colors={survey.active ? ['#ffffff', '#f0f9ff'] : ['#ffffff', '#f5f5f5']} style={styles.cardContent}>
+        <View style={styles.cardContent}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>{survey.title}</Text>
-            <View style={[styles.statusDot, { backgroundColor: survey.active ? '#4CAF50' : '#757575' }]} />
+            <View style={styles.titleContainer}>
+              <Text style={styles.cardTitle} numberOfLines={1}>{survey.title}</Text>
+              <View style={[styles.statusDot, { backgroundColor: survey.active ? '#10B981' : '#9CA3AF' }]} />
+            </View>
+            <Text style={styles.dateText}>{new Date(survey.createdAt).toLocaleDateString()}</Text>
           </View>
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Question</Text>
-            <Text style={styles.sectionText}>{survey.question}</Text>
-          </View>
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Options</Text>
+
+          <Text style={styles.questionText} numberOfLines={2}>{survey.question}</Text>
+
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.optionsScrollView}
+          >
             <View style={styles.optionsContainer}>
               {survey.options.map((option, index) => (
                 <View key={index} style={styles.optionPill}>
-                  <Text style={styles.optionText}>{option}</Text>
+                  <Text style={styles.optionText} numberOfLines={1}>{option}</Text>
                 </View>
               ))}
             </View>
-          </View>
-          <View style={styles.footer}>
-            <Text style={styles.dateText}>Created: {new Date(survey.createdAt).toLocaleDateString()}</Text>
-            <View style={styles.buttonContainer}>
+          </ScrollView>
+
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.resultsButton]}
+              onPress={onViewResults}
+            >
+              <Ionicons name="bar-chart-outline" size={18} color="#fff" />
+              <Text style={styles.buttonText}>Results</Text>
+            </TouchableOpacity>
+            {isActiveTab && survey.active && onComplete && (
               <TouchableOpacity 
-                style={[styles.actionButton, styles.resultsButton]} 
-                onPress={onViewResults}
+                style={[styles.actionButton, styles.completeButton]}
+                onPress={onComplete}
               >
-                <Ionicons name="bar-chart-outline" size={18} color="#fff" />
-                <Text style={styles.buttonText}>View Results</Text>
+                <Ionicons name="checkmark-circle-outline" size={18} color="#fff" />
+                <Text style={styles.buttonText}>Complete</Text>
               </TouchableOpacity>
-              {isActiveTab && survey.active && onComplete && (
-                <TouchableOpacity style={[styles.actionButton, styles.completeButton]} onPress={onComplete}>
-                  <Ionicons name="checkmark-circle-outline" size={18} color="#fff" />
-                  <Text style={styles.buttonText}>Complete</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            )}
           </View>
-        </LinearGradient>
+        </View>
       </TouchableOpacity>
     </Animated.View>
   );
 };
 
-const TabBar = ({ activeTab, onTabPress }: { activeTab: string; onTabPress: (tabId: string) => void }) => {
+const EmptyState = ({ message, icon }: { message: string; icon: string }) => (
+  <View style={styles.emptyState}>
+    <LinearGradient
+      colors={['#f8fafc', '#f1f5f9']}
+      style={styles.emptyStateGradient}
+    >
+      <Ionicons name={icon} size={64} color="#94a3b8" />
+      <Text style={styles.emptyStateTitle}>{message}</Text>
+      <Text style={styles.emptyStateSubtitle}>
+        {message === 'No active surveys' 
+          ? 'Create a new survey to get started!'
+          : 'Complete some surveys to see them here.'}
+      </Text>
+    </LinearGradient>
+  </View>
+);
+
+const TabBar = ({ activeTab, onTabPress }: { activeTab: string; onTabPress: (tab: string) => void }) => {
   const tabs = [
     { id: 'active', label: 'Active', icon: 'radio-button-on' },
     { id: 'completed', label: 'Completed', icon: 'checkmark-circle' },
@@ -108,9 +137,22 @@ const TabBar = ({ activeTab, onTabPress }: { activeTab: string; onTabPress: (tab
   return (
     <View style={styles.tabBar}>
       {tabs.map((tab) => (
-        <TouchableOpacity key={tab.id} style={[styles.tab, activeTab === tab.id && styles.activeTab]} onPress={() => onTabPress(tab.id)}>
-          <Ionicons name={tab.icon as any} size={18} color={activeTab === tab.id ? '#1e3a8a' : '#ffffff'} />
-          <Text style={[styles.tabText, activeTab === tab.id && styles.activeTabText]}>{tab.label}</Text>
+        <TouchableOpacity
+          key={tab.id}
+          style={[styles.tab, activeTab === tab.id && styles.activeTab]}
+          onPress={() => onTabPress(tab.id)}
+        >
+          <Ionicons 
+            name={tab.icon} 
+            size={20} 
+            color={activeTab === tab.id ? '#1e40af' : '#94A3B8'} 
+          />
+          <Text style={[
+            styles.tabText,
+            activeTab === tab.id && styles.activeTabText
+          ]}>
+            {tab.label}
+          </Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -124,8 +166,17 @@ const Survey = () => {
   const [publicSurveys, setPublicSurveys] = useState<SurveyType[]>([]);
   const scrollViewRef = React.useRef<ScrollView>(null);
 
-  const activeSurveys = publicSurveys.filter((survey) => survey.active);
-  const completedSurveys = publicSurveys.filter((survey) => !survey.active);
+  const sortedActiveSurveys = React.useMemo(() => {
+    return publicSurveys
+      .filter((survey) => survey.active)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [publicSurveys]);
+
+  const sortedCompletedSurveys = React.useMemo(() => {
+    return publicSurveys
+      .filter((survey) => !survey.active)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [publicSurveys]);
 
   const fetchData = async () => {
     try {
@@ -213,13 +264,21 @@ const Survey = () => {
       header: () => (
         <SafeAreaView style={styles.headerContainer}>
           <StatusBar backgroundColor="#1e3a8a" barStyle="light-content" />
-          <LinearGradient colors={['#1e3a8a', '#2563eb']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerContent}>
+          <LinearGradient 
+            colors={['#1e3a8a', '#2563eb']} 
+            start={{ x: 0, y: 0 }} 
+            end={{ x: 1, y: 1 }} 
+            style={styles.headerContent}
+          >
             <View style={styles.headerLeft}>
               <Text style={styles.headerTitle}>My Surveys</Text>
             </View>
             <View style={styles.headerRight}>
               <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
-                <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('NewSurvey')}>
+                <TouchableOpacity 
+                  style={styles.addButton} 
+                  onPress={() => navigation.navigate('NewSurvey')}
+                >
                   <Ionicons name="add" size={24} color="#fff" />
                 </TouchableOpacity>
               </Animated.View>
@@ -239,21 +298,20 @@ const Survey = () => {
     if (activeTab !== tabId) setActiveTab(tabId);
   };
 
-  const renderEmptyState = (message: string) => (
-    <View style={styles.emptyState}>
-      <Ionicons name="document-text-outline" size={48} color="#cbd5e1" />
-      <Text style={styles.emptyStateText}>{message}</Text>
-    </View>
-  );
-
   return (
     <View style={styles.container}>
-      <ScrollView ref={scrollViewRef} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={handleScroll}>
-        <View style={styles.tabContent}>
+      <ScrollView 
+        ref={scrollViewRef} 
+        horizontal 
+        pagingEnabled 
+        showsHorizontalScrollIndicator={false} 
+        onMomentumScrollEnd={handleScroll}
+      >
+        <View style={[styles.tabContent, { width: Dimensions.get('window').width }]}>
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.cardsContainer}>
-              {activeSurveys.length > 0 ? (
-                activeSurveys.map((survey) => (
+              {sortedActiveSurveys.length > 0 ? (
+                sortedActiveSurveys.map((survey) => (
                   <SurveyCard
                     key={survey._id}
                     survey={survey}
@@ -263,16 +321,19 @@ const Survey = () => {
                   />
                 ))
               ) : (
-                renderEmptyState('No active surveys')
+                <EmptyState 
+                  message="No active surveys" 
+                  icon="document-text-outline" 
+                />
               )}
             </View>
           </ScrollView>
         </View>
-        <View style={styles.tabContent}>
+        <View style={[styles.tabContent, { width: Dimensions.get('window').width }]}>
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.cardsContainer}>
-              {completedSurveys.length > 0 ? (
-                completedSurveys.map((survey) => (
+              {sortedCompletedSurveys.length > 0 ? (
+                sortedCompletedSurveys.map((survey) => (
                   <SurveyCard
                     key={survey._id}
                     survey={survey}
@@ -281,7 +342,10 @@ const Survey = () => {
                   />
                 ))
               ) : (
-                renderEmptyState('No completed surveys')
+                <EmptyState 
+                  message="No completed surveys" 
+                  icon="checkmark-circle-outline" 
+                />
               )}
             </View>
           </ScrollView>
@@ -291,170 +355,221 @@ const Survey = () => {
   );
 };
 
-// Keep the styles object from the original question (same as provided earlier)
-// Make sure to include all the StyleSheet definitions shown in the original code
-
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: '#F8FAFC',
   },
   headerContainer: {
-    backgroundColor: '#1e3a8a',
-    paddingTop: Platform.OS === 'android' ? 25 : 0,
+    backgroundColor: '#1e40af',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   headerLeft: {
     flex: 1,
-    justifyContent: 'center',
   },
   headerRight: {
-    justifyContent: 'center',
-    alignItems: 'flex-end',
+    marginLeft: 16,
   },
   headerTitle: {
-    fontSize: 25,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '700',
     color: '#ffffff',
+    letterSpacing: 0.5,
   },
-
+  addButton: {
+    backgroundColor: '#2563eb',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: '#1e3a8a',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginRight: 16,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  activeTab: {
     backgroundColor: '#ffffff',
-  },
-  tabText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  activeTabText: {
-    color: '#1e3a8a',
-  },
-  tabContent: {
-    width: Dimensions.get('window').width,
-  },
-  cardsContainer: {
-    padding: 16,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    margin: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
+  // ... (previous code remains the same until the styles)
+
+
+  // ... (previous styles remain the same)
+  
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+  },
+  activeTab: {
+    backgroundColor: '#EFF6FF',
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  activeTabText: {
+    color: '#1e40af',
+  },
+  tabContent: {
+    flex: 1,
+  },
+  cardsContainer: {
+    padding: 8,
+  },
+  cardContainer: {
+    height: 220,
+    marginVertical: 8,
+    marginHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  card: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
   cardContent: {
-    padding: 20,
+    flex: 1,
+    padding: 16,
   },
   cardHeader: {
+    marginBottom: 12,
+  },
+  titleContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    gap: 8,
   },
   cardTitle: {
-    fontSize: 20,
+    flex: 1,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#1A1A1A',
+    color: '#1e293b',
   },
   statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  section: {
-    marginBottom: 16,
+  dateText: {
+    fontSize: 14,
+    color: '#64748b',
+    marginTop: 4,
   },
-  sectionLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+  questionText: {
+    fontSize: 15,
+    color: '#475569',
+    lineHeight: 20,
+    marginBottom: 12,
   },
-  sectionText: {
-    fontSize: 16,
-    color: '#333',
-    lineHeight: 24,
+  optionsScrollView: {
+    marginBottom: 12,
   },
   optionsContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
+    paddingHorizontal: 4,
   },
   optionPill: {
-    backgroundColor: '#F0F4FF',
-    borderRadius: 8,
-    paddingVertical: 8,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 16,
+    paddingVertical: 6,
     paddingHorizontal: 12,
   },
   optionText: {
-    fontSize: 14,
-    color: '#1e3a8a',
-    fontWeight: '500',
+    fontSize: 13,
+    color: '#475569',
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-    gap: 12,
+    gap: 8,
+    marginTop: 'auto',
   },
   actionButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 4,
   },
   resultsButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#10B981',
   },
   completeButton: {
-    backgroundColor: '#1e3a8a',
+    backgroundColor: '#1e40af',
   },
   buttonText: {
-    color: 'white',
-    fontWeight: '600',
+    color: '#ffffff',
     fontSize: 14,
+    fontWeight: '600',
   },
-  addButton: {
-    backgroundColor: '#1e3a8a',
-    width: 40,
-    height: 40,
-    borderRadius: 22,
-    justifyContent: 'center',
+  emptyState: {
+    margin: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  emptyStateGradient: {
     alignItems: 'center',
-    marginRight: 16,
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8,
+    justifyContent: 'center',
+    padding: 32,
+    borderRadius: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#64748b',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  emptyStateSubtitle: {
+    fontSize: 14,
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 16,
   },
   inactiveCard: {
-    opacity: 0.7,
+    opacity: 0.8,
   },
 });
 
 export default Survey;
+
