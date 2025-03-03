@@ -25,6 +25,7 @@ import { API_URL } from '@/constants/constants';
 import styles from "./Styles/homestyle";
 import { launchImageLibrary, ImageLibraryOptions, MediaType, ImagePickerResponse } from 'react-native-image-picker';
 import * as ImagePicker from 'expo-image-picker';
+import { Linking } from 'react-native';
 
 const COLORS = {
   primary: '#2C3E50', // Deep navy blue
@@ -604,6 +605,55 @@ const Home = () => {
   const renderPostItem = ({ item }: { item: Post }) => {
     const department = DEPARTMENTS.find(d => d.name === item.department);
 
+    const formattedDate = new Date(item.createdAt).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+      // Update your share function to use proper typing
+      const shareToWhatsApp = async (item: Post) => {
+        try {
+          // Get department name
+          const departmentName = DEPARTMENTS.find(d => d.name === item.department)?.name || "Department not specified";
+          
+          // Format date nicely
+          const formattedDate = new Date(item.createdAt).toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          
+          // Create comprehensive formatted message
+          const message = 
+            `*${item.title}*\n\n` +
+            ` *${departmentName}\n` +
+            `*Date:* ${formattedDate}\n\n` +
+            `${item.message}\n\n` + 
+            (item.imageUri ? `*Image:* ${item.imageUri}\n\n` : "") +
+            "Shared from Populus App";
+          
+          // For WhatsApp sharing via Linking (no need for RNShare)
+          const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(message)}`;
+          
+          const canOpen = await Linking.canOpenURL(whatsappUrl);
+          if (canOpen) {
+            await Linking.openURL(whatsappUrl);
+          } else {
+            Alert.alert("WhatsApp not installed", "Please install WhatsApp to share content.");
+          }
+        } catch (error) {
+          console.error('Error sharing:', error);
+          Alert.alert(
+            'Sharing Failed',
+            'Could not share this post to WhatsApp. Please try again later.'
+          );
+        }
+      };
     
     return (
       <View style={styles.postContainer}>
@@ -682,6 +732,14 @@ const Home = () => {
           >
             <Icon name="chatbubble-outline" size={18} color={COLORS.subtext} />
             <Text style={styles.actionText}>{item.reactions.comments.length}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => shareToWhatsApp(item)}
+          >
+            <Icon name="logo-whatsapp" size={20} color="#25D366" />
+            <Text style={styles.actionText}>WhatsApp</Text>
           </TouchableOpacity>
         </View>
         {selectedPostId === item._id && (

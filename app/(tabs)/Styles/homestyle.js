@@ -298,12 +298,13 @@ const styles = StyleSheet.create({
     marginLeft: 35,
   },
   postTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.primary, // Deep blue for contrast
+    fontSize: 17, // Slightly larger for emphasis
+    fontWeight: 'bold', // Ensures bold text
+    color: '#000', // Black color for a professional look
     marginBottom: 6,
     paddingHorizontal: 10,
   },
+  
   
   postImage: {
     width: '100%',
