@@ -591,6 +591,156 @@ const styles = StyleSheet.create({
     color: COLORS.subtext,
     textAlign: 'center',
   },
+  /** Weather Widget **/
+  weatherWidget: {
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 16,
+    shadowColor: COLORS.shadowDark,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  weatherHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.cardBg,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  locationText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginLeft: 6,
+  },
+  dateText: {
+    fontSize: 13,
+    color: COLORS.textLight,
+    fontWeight: '500',
+  },
+  weatherContent: {
+    padding: 16,
+  },
+  mainWeatherInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  temperatureContainer: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+  },
+  temperature: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    lineHeight: 54,
+  },
+  highLowContainer: {
+    flexDirection: 'row',
+    marginTop: 4,
+  },
+  highLowItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  highLowText: {
+    fontSize: 13,
+    color: COLORS.textLight,
+    marginLeft: 2,
+    fontWeight: '500',
+  },
+  conditionContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  weatherIconContainer: {
+    backgroundColor: COLORS.cardBg,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  weatherCondition: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  feelsLikeText: {
+    fontSize: 12,
+    color: COLORS.textLight,
+  },
+  detailsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  detailItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    marginTop: 4,
+    marginBottom: 2,
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  menuItem: {
+    backgroundColor: "#1E1E1E", // Dark background color
+    paddingVertical: 12, // Vertical padding for better touch experience
+    paddingHorizontal: 16, // Horizontal padding for spacing
+    borderRadius: 8, // Rounded corners
+    marginVertical: 6, // Spacing between menu items
+    alignItems: "center", // Center text horizontally
+    justifyContent: "center", // Center text vertically
+  },
+  menuItemText: {
+    fontSize: 16, // Readable font size
+    color: "#FFFFFF", // White text color for contrast
+    fontWeight: "bold", // Make text bold
+  },
+  importResidentButton: {
+    backgroundColor: COLORS.primary,
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: 16,
+  },
+  importResidentButtonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
    });
 
 export default styles;

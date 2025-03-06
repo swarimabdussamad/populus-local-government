@@ -26,7 +26,9 @@ import styles from "./Styles/homestyle";
 import { launchImageLibrary, ImageLibraryOptions, MediaType, ImagePickerResponse } from 'react-native-image-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Linking } from 'react-native';
-
+import Feather from 'react-native-vector-icons/Feather';
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
 const COLORS = {
   primary: '#2C3E50', // Deep navy blue
   secondary: '#1E88E5', // Vibrant blue
@@ -37,8 +39,17 @@ const COLORS = {
   border: '#E0E0E0', // Subtle border color
   error: '#D32F2F', // Strong red for errors
   success: '#388E3C', // Green for success messages
+  textLight: '#546E7A',
 };
 
+// Define the type for your navigation stack
+type HomeStackParamList = {
+  Home: undefined; // No parameters expected for the Home screen
+  ImportResident: undefined; // No parameters expected for the ImportResident screen
+};
+
+// Define the type for the navigation prop
+type HomeScreenNavigationProp = StackNavigationProp<HomeStackParamList, "Home">;
 
 const DEPARTMENTS: Department[] = [
   { 
@@ -233,6 +244,66 @@ const DepartmentPicker: React.FC<{
   );
 };
 
+const WeatherWidget = () => {
+  return (
+    <View style={styles.weatherWidget}>
+      <View style={styles.weatherHeader}>
+        <View style={styles.locationContainer}>
+          <Feather name="map-pin" size={14} color={COLORS.primary} />
+          <Text style={styles.locationText}>San Francisco, CA</Text>
+        </View>
+        <Text style={styles.dateText}>February 27, 2025</Text>
+      </View>
+      
+      <View style={styles.weatherContent}>
+        <View style={styles.mainWeatherInfo}>
+          <View style={styles.temperatureContainer}>
+            <Text style={styles.temperature}>28°</Text>
+            <View style={styles.highLowContainer}>
+              <View style={styles.highLowItem}>
+                <Feather name="arrow-up" size={12} color={COLORS.textLight} />
+                <Text style={styles.highLowText}>32°</Text>
+              </View>
+              <View style={styles.highLowItem}>
+                <Feather name="arrow-down" size={12} color={COLORS.textLight} />
+                <Text style={styles.highLowText}>24°</Text>
+              </View>
+            </View>
+          </View>
+          
+          <View style={styles.conditionContainer}>
+            <View style={styles.weatherIconContainer}>
+              <Feather name="sun" size={32} color={COLORS.primary} />
+            </View>
+            <Text style={styles.weatherCondition}>Sunny</Text>
+            <Text style={styles.feelsLikeText}>Feels like 30°</Text>
+          </View>
+        </View>
+        
+        <View style={styles.detailsContainer}>
+          <View style={styles.detailItem}>
+            <Feather name="droplet" size={16} color={COLORS.secondary} />
+            <Text style={styles.detailLabel}>Humidity</Text>
+            <Text style={styles.detailValue}>42%</Text>
+          </View>
+          
+          <View style={styles.detailItem}>
+            <Feather name="wind" size={16} color={COLORS.secondary} />
+            <Text style={styles.detailLabel}>Wind</Text>
+            <Text style={styles.detailValue}>5.2 mph</Text>
+          </View>
+          
+          <View style={styles.detailItem}>
+            <Feather name="sun" size={16} color={COLORS.secondary} />
+            <Text style={styles.detailLabel}>UV Index</Text>
+            <Text style={styles.detailValue}>7 High</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+};
+
 // Comment Modal Component
 const CommentModal: React.FC<{
   visible: boolean;
@@ -337,6 +408,9 @@ const CommentModal: React.FC<{
 
 // Main Home Component
 const Home = () => {
+  
+  const navigation = useNavigation();
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -755,13 +829,28 @@ const Home = () => {
     );
   };
 
+  const renderHeader = () => (
+    <View>
+      <WeatherWidget />
+    </View>
+  );
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
 
+      <TouchableOpacity
+      onPress={() => {
+        console.log("Navigating to ImportResident"); // Debugging
+        navigation.navigate("ImportResident");
+      }}
+    >
+      <Text>Go to Import Resident</Text>
+    </TouchableOpacity>
+
       {isLoading ? (
         <ActivityIndicator size="large" color={COLORS.secondary} style={styles.loader} />
       ) : (
+
         <FlatList
           data={posts}
           renderItem={renderPostItem}
@@ -769,6 +858,7 @@ const Home = () => {
           refreshing={isLoading}
           onRefresh={fetchPosts}
           contentContainerStyle={styles.listContainer}
+          ListHeaderComponent={renderHeader}
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Icon name="documents-outline" size={48} color={COLORS.subtext} />
@@ -778,6 +868,7 @@ const Home = () => {
             </View>
           }
         />
+        
       )}
 
       <TouchableOpacity
@@ -871,6 +962,7 @@ const Home = () => {
             >
               <Text style={styles.submitButtonText}>Publish Post</Text>
             </TouchableOpacity>
+            
           </View>
         </View>
       </Modal>
