@@ -9,292 +9,205 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL } from "@/constants/constants";
 
-const NewSurvey = () => {
+
+function NewSurvey() {
   const navigation = useNavigation();
   const [surveyTitle, setSurveyTitle] = useState("");
-  const [surveyDescription, setSurveyDescription] = useState("");
-  const [questions, setQuestions] = useState([
-    { id: "1", text: "", type: "multiple", options: [""], required: false },
-  ]);
+  const [question, setQuestion] = useState({
+    text: "",
+    options: ["", ""], // Default 2 options
+  });
 
-  const addQuestion = () => {
-    setQuestions((prev) => [
-      ...prev,
-      { id: Date.now().toString(), text: "", type: "multiple", options: [""], required: false },
-    ]);
+  const addOption = () => {
+    if (question.options.length < 4) {
+      setQuestion((prev) => ({
+        ...prev,
+        options: [...prev.options, ""],
+      }));
+    }
   };
 
-  const toggleRequired = (questionId) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === questionId ? { ...q, required: !q.required } : q
-      )
-    );
+  const removeOption = (optionIndex) => {
+    if (question.options.length > 2) {
+      setQuestion((prev) => ({
+        ...prev,
+        options: prev.options.filter((_, i) => i !== optionIndex),
+      }));
+    }
   };
 
-  const removeQuestion = (questionId) => {
-    setQuestions((prev) => prev.filter((q) => q.id !== questionId));
-  };
-
-  const removeOption = (questionId, optionIndex) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === questionId
-          ? { ...q, options: q.options.filter((_, i) => i !== optionIndex) }
-          : q
-      )
-    );
-  };
-
-  const addOption = (questionId) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === questionId ? { ...q, options: [...q.options, ""] } : q
-      )
-    );
-  };
-
-  const changeQuestionType = (questionId, type) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === questionId ? { ...q, type } : q
-      )
-    );
-  };
-
-  const saveSurvey = () => {
+  const createSurvey = async () => {
+    // Input validation
     if (!surveyTitle.trim()) {
       alert("Please add a survey title");
       return;
     }
-    console.log("Survey saved:", { surveyTitle, surveyDescription, questions });
-    navigation.goBack();
+    if (!question.text.trim()) {
+      alert("Please add a question");
+      return;
+    }
+    if (question.options.some((option) => !option.trim())) {
+      alert("Please fill all options");
+      return;
+    }
+  
+    // Get the token from AsyncStorage
+    const token = await AsyncStorage.getItem('userToken');
+    if (!token) {
+      alert("User token not found. Please log in again.");
+      return;
+    }
+  
+    // Prepare survey data
+    const surveyData = {
+      title: surveyTitle,
+      question: question.text,
+      options: question.options,
+    };
+  
+    try {
+      // Send the request to the backend
+      const response = await fetch(`${API_URL}/government/create_survey`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Include the token in the headers
+        },
+        body: JSON.stringify(surveyData),
+      });
+  
+      // Handle the response
+      const result = await response.json();
+      if (response.ok) {
+        alert("Survey created successfully!");
+        navigation.goBack(); // Navigate back after successful creation
+      } else {
+        // Display error message from the backend
+        alert(result.message || "Failed to create survey");
+      }
+    } catch (error) {
+      console.error("Error creating survey:", error);
+      alert("An error occurred while creating the survey");
+    }
   };
+  
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView}>
-        <View style={styles.headerCard}>
+
+        {/* Survey Title Input */}
+        <View style={styles.card}>
+          <Text style={styles.label}>Survey Title</Text>
           <TextInput
-            style={styles.titleInput}
-            placeholder="Survey Title"
+            style={styles.input}
+            placeholder="Enter survey title"
             value={surveyTitle}
             onChangeText={setSurveyTitle}
-            placeholderTextColor="#666"
-          />
-          <TextInput
-            style={styles.descriptionInput}
-            placeholder="Survey Description (optional)"
-            value={surveyDescription}
-            onChangeText={setSurveyDescription}
-            multiline
-            placeholderTextColor="#666"
-          />
+            placeholderTextColor="#999" />
         </View>
 
-        {questions.map((question, index) => (
-          <View key={question.id} style={styles.questionCard}>
-            <View style={styles.questionHeader}>
-              <Text style={styles.questionNumber}>Question {index + 1}</Text>
-              <TouchableOpacity
-                onPress={() => removeQuestion(question.id)}
-                style={styles.removeButton}
-              >
-                <MaterialCommunityIcons name="delete-outline" size={24} color="#dc3545" />
-              </TouchableOpacity>
+        {/* Question Section */}
+        <View style={styles.card}>
+          <Text style={styles.label}>Question</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your question"
+            value={question.text}
+            onChangeText={(text) => setQuestion((prev) => ({ ...prev, text }))}
+            placeholderTextColor="#999" />
+
+          {/* Options Section */}
+          <Text style={[styles.label, { marginTop: 16 }]}>Options</Text>
+          {question.options.map((option, optionIndex) => (
+            <View key={optionIndex} style={styles.optionContainer}>
+              <MaterialCommunityIcons
+                name="radiobox-blank"
+                size={24}
+                color="#1b1b7e" />
+              <TextInput
+                style={styles.optionInput}
+                placeholder={`Option ${optionIndex + 1}`}
+                value={option}
+                onChangeText={(text) => setQuestion((prev) => ({
+                  ...prev,
+                  options: prev.options.map((o, i) => i === optionIndex ? text : o
+                  ),
+                }))}
+                placeholderTextColor="#999" />
+              {question.options.length > 2 && (
+                <TouchableOpacity onPress={() => removeOption(optionIndex)}>
+                  <MaterialCommunityIcons name="close" size={24} color="#ff4444" />
+                </TouchableOpacity>
+              )}
             </View>
+          ))}
 
-            <TextInput
-              style={styles.questionInput}
-              placeholder="Enter your question"
-              value={question.text}
-              onChangeText={(text) =>
-                setQuestions((prev) =>
-                  prev.map((q) =>
-                    q.id === question.id ? { ...q, text } : q
-                  )
-                )
-              }
-            />
+          {/* Add Option Button */}
+          {question.options.length < 4 && (
+            <TouchableOpacity style={styles.addOptionButton} onPress={addOption}>
+              <MaterialCommunityIcons
+                name="plus-circle-outline"
+                size={24}
+                color="#1b1b7e" />
+              <Text style={styles.addOptionText}>Add Option</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
-            <View style={styles.questionTypeContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.typeButton,
-                  question.type === "multiple" && styles.activeTypeButton,
-                ]}
-                onPress={() => changeQuestionType(question.id, "multiple")}
-              >
-                <MaterialCommunityIcons name="radiobox-marked" size={20} color={question.type === "multiple" ? "#fff" : "#666"} />
-                <Text style={[styles.typeButtonText, question.type === "multiple" && styles.activeTypeButtonText]}>Multiple Choice</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.typeButton,
-                  question.type === "checkbox" && styles.activeTypeButton,
-                ]}
-                onPress={() => changeQuestionType(question.id, "checkbox")}
-              >
-                <MaterialCommunityIcons name="checkbox-marked" size={20} color={question.type === "checkbox" ? "#fff" : "#666"} />
-                <Text style={[styles.typeButtonText, question.type === "checkbox" && styles.activeTypeButtonText]}>Checkbox</Text>
-              </TouchableOpacity>
-            </View>
-
-            {question.options.map((option, optionIndex) => (
-              <View key={optionIndex} style={styles.optionContainer}>
-                <MaterialCommunityIcons
-                  name={question.type === "multiple" ? "radiobox-blank" : "checkbox-blank-outline"}
-                  size={24}
-                  color="#666"
-                />
-                <TextInput
-                  style={styles.optionInput}
-                  placeholder={`Option ${optionIndex + 1}`}
-                  value={option}
-                  onChangeText={(text) =>
-                    setQuestions((prev) =>
-                      prev.map((q) =>
-                        q.id === question.id
-                          ? {
-                              ...q,
-                              options: q.options.map((o, i) =>
-                                i === optionIndex ? text : o
-                              ),
-                            }
-                          : q
-                      )
-                    )
-                  }
-                />
-                {question.options.length > 1 && (
-                  <TouchableOpacity
-                    onPress={() => removeOption(question.id, optionIndex)}
-                  >
-                    <MaterialCommunityIcons name="close" size={24} color="#666" />
-                  </TouchableOpacity>
-                )}
-              </View>
-            ))}
-
-            <View style={styles.questionFooter}>
-              <TouchableOpacity
-                style={styles.addOptionButton}
-                onPress={() => addOption(question.id)}
-              >
-                <MaterialCommunityIcons name="plus-circle-outline" size={24} color="#007AFF" />
-                <Text style={styles.addOptionText}>Add Option</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.requiredButton}
-                onPress={() => toggleRequired(question.id)}
-              >
-                <MaterialCommunityIcons
-                  name={question.required ? "star" : "star-outline"}
-                  size={24}
-                  color={question.required ? "#007AFF" : "#666"}
-                />
-                <Text style={[styles.requiredText, question.required && styles.requiredActiveText]}>
-                  Required
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
-
-        <TouchableOpacity style={styles.addQuestionButton} onPress={addQuestion}>
-          <MaterialCommunityIcons name="plus-circle" size={24} color="#fff" />
-          <Text style={styles.addQuestionText}>Add Question</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.saveButton} onPress={saveSurvey}>
-          <MaterialCommunityIcons name="content-save" size={24} color="#fff" />
-          <Text style={styles.saveButtonText}>Save Survey</Text>
+        {/* Create Survey Button */}
+        <TouchableOpacity style={styles.createButton} onPress={createSurvey}>
+          <Text style={styles.createButtonText}>Create Survey</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#f8f9fa",
   },
   scrollView: {
     padding: 16,
   },
-  headerCard: {
-    backgroundColor: "#0500",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    elevation: 2,
+  header: {
+    marginBottom: 24,
   },
-  titleInput: {
-    fontSize: 24,
+  headerTitle: {
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#fff",
+    color: "#1b1b7e",
+    textAlign: "center",
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
     marginBottom: 8,
   },
-  descriptionInput: {
+  input: {
     fontSize: 16,
-    color: "#fff",
-    minHeight: 60,
-  },
-  questionCard: {
-    backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    elevation: 2,
-  },
-  questionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  questionNumber: {
-    fontSize: 18,
-    fontWeight: "bold",
     color: "#333",
-  },
-  removeButton: {
-    padding: 4,
-  },
-  questionInput: {
-    fontSize: 16,
-    borderBottomWidth: 2,
+    borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
     paddingVertical: 8,
-    marginBottom: 16,
-  },
-  questionTypeContainer: {
-    flexDirection: "row",
-    marginBottom: 16,
-    gap: 12,
-  },
-  typeButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#666",
-    gap: 8,
-  },
-  activeTypeButton: {
-    backgroundColor: "#007AFF",
-    borderColor: "#007AFF",
-  },
-  typeButtonText: {
-    color: "#666",
-  },
-  activeTypeButtonText: {
-    color: "#fff",
   },
   optionContainer: {
     flexDirection: "row",
@@ -305,65 +218,38 @@ const styles = StyleSheet.create({
   optionInput: {
     flex: 1,
     fontSize: 16,
+    color: "#333",
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
     paddingVertical: 4,
-  },
-  questionFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 16,
   },
   addOptionButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    marginTop: 8,
   },
   addOptionText: {
-    color: "#007AFF",
+    color: "#1b1b7e",
     fontSize: 16,
+    fontWeight: "500",
   },
-  requiredButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  requiredText: {
-    color: "#666",
-    fontSize: 16,
-  },
-  requiredActiveText: {
-    color: "#007AFF",
-  },
-  addQuestionButton: {
-    backgroundColor: "#007AFF",
-    flexDirection: "row",
+  createButton: {
+    backgroundColor: "#1b1b7e",
+    borderRadius: 12,
+    padding: 16,
     alignItems: "center",
     justifyContent: "center",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    gap: 8,
+    marginTop: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  addQuestionText: {
+  createButtonText: {
     color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  saveButton: {
-    backgroundColor: "#28a745",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 32,
-    gap: 8,
-  },
-  saveButtonText: {
-    color: "#fff",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
   },
 });

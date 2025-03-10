@@ -2,6 +2,8 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Foundation, MaterialCommunityIcons, Feather, Ionicons } from "@expo/vector-icons";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 
 // Import your screens
 import Home from "./home"
@@ -12,6 +14,7 @@ import SurveyList from "@/app/(tabs)/survey/SurveyList";
 import NewSurvey from "@/app/(tabs)/survey/NewSurvey";
 import Users from "@/app/(tabs)/users";
 import Profile from "@/app/(tabs)/profile";
+import SurveyResults from "./survey/SurveyResult";
 
 const Tab = createBottomTabNavigator();
 const SurveyStack = createNativeStackNavigator();
@@ -21,6 +24,7 @@ const MapStack = createNativeStackNavigator();
 // Survey Stack Navigator
 const SurveyStackNavigator = () => {
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SurveyStack.Navigator>
       <SurveyStack.Screen
         name="SurveyList"
@@ -28,11 +32,17 @@ const SurveyStackNavigator = () => {
         options={{ title: "Surveys" }}
       />
       <SurveyStack.Screen
+        name="SurveyResults"
+        component={SurveyResults}
+        options={{ title: "result" }}
+      />
+      <SurveyStack.Screen
         name="NewSurvey"
         component={NewSurvey}
         options={{ title: "Create New Survey" }}
       />
     </SurveyStack.Navigator>
+    </GestureHandlerRootView>
   );
 };
 
