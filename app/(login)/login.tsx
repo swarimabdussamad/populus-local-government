@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API_URL } from '@/constants/constants';
+import { API_URL } from '@/constants/constants'
 import {
   View,
   Text,

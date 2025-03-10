@@ -15,6 +15,7 @@ import NewSurvey from "@/app/(tabs)/survey/NewSurvey";
 import Users from "@/app/(tabs)/users";
 import Profile from "@/app/(tabs)/profile";
 import SurveyResults from "./survey/SurveyResult";
+import ImportResident from "@/app/(tabs)/importResident";
 
 const Tab = createBottomTabNavigator();
 const SurveyStack = createNativeStackNavigator();
@@ -53,12 +54,17 @@ const HomeStackNavigator = () => {
       <HomeStack.Screen
         name="Home"
         component={Home}
-        options={{ title: "Home" }}
+        options={{ headerShown: false }} 
       />
       <HomeStack.Screen
         name="Weather"
         component={Weather}
         options={{ title: "Weather Forecast" }}
+      />
+      <HomeStack.Screen
+        name="ImportResident"
+        component={ImportResident}
+        options={{  headerShown: false }}
       />
     </HomeStack.Navigator>
   );
