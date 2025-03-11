@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState,useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -126,6 +126,8 @@ interface Comment {
   createdAt: Date;
 }
 
+import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
+import { WeatherContext } from './_layout'; // Adjust path to match your file structure
 
 interface Post {
   _id: string;
@@ -248,6 +250,7 @@ const DepartmentPicker: React.FC<{
   );
 };
 
+
 const WeatherWidget = () => {
   return (
     <View style={styles.weatherWidget}>
@@ -284,25 +287,7 @@ const WeatherWidget = () => {
           </View>
         </View>
         
-        <View style={styles.detailsContainer}>
-          <View style={styles.detailItem}>
-            <Feather name="droplet" size={16} color={COLORS.secondary} />
-            <Text style={styles.detailLabel}>Humidity</Text>
-            <Text style={styles.detailValue}>42%</Text>
-          </View>
-          
-          <View style={styles.detailItem}>
-            <Feather name="wind" size={16} color={COLORS.secondary} />
-            <Text style={styles.detailLabel}>Wind</Text>
-            <Text style={styles.detailValue}>5.2 mph</Text>
-          </View>
-          
-          <View style={styles.detailItem}>
-            <Feather name="sun" size={16} color={COLORS.secondary} />
-            <Text style={styles.detailLabel}>UV Index</Text>
-            <Text style={styles.detailValue}>7 High</Text>
-          </View>
-        </View>
+      
       </View>
     </View>
   );
@@ -419,6 +404,7 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
+  const { weatherData } = useContext(WeatherContext);
   const [newPost, setNewPost] = useState({
     department: '',
     title: '',
@@ -842,14 +828,7 @@ const Home = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
 
-      <TouchableOpacity
-      onPress={() => {
-        console.log("Navigating to ImportResident"); // Debugging
-        navigation.navigate("ImportResident");
-      }}
-    >
-      <Text>Go to Import Resident</Text>
-    </TouchableOpacity>
+      
 
       {isLoading ? (
         <ActivityIndicator size="large" color={COLORS.secondary} style={styles.loader} />
