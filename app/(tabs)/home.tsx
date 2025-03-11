@@ -284,25 +284,7 @@ const WeatherWidget = () => {
           </View>
         </View>
         
-        <View style={styles.detailsContainer}>
-          <View style={styles.detailItem}>
-            <Feather name="droplet" size={16} color={COLORS.secondary} />
-            <Text style={styles.detailLabel}>Humidity</Text>
-            <Text style={styles.detailValue}>42%</Text>
-          </View>
-          
-          <View style={styles.detailItem}>
-            <Feather name="wind" size={16} color={COLORS.secondary} />
-            <Text style={styles.detailLabel}>Wind</Text>
-            <Text style={styles.detailValue}>5.2 mph</Text>
-          </View>
-          
-          <View style={styles.detailItem}>
-            <Feather name="sun" size={16} color={COLORS.secondary} />
-            <Text style={styles.detailLabel}>UV Index</Text>
-            <Text style={styles.detailValue}>7 High</Text>
-          </View>
-        </View>
+      
       </View>
     </View>
   );

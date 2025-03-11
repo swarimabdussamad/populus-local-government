@@ -18,7 +18,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import {importResident} from '@/app/(tabs)/importResident';
 
 const UnverifiedUsers = () => {
   const [users, setUsers] = useState([]);
@@ -130,6 +130,10 @@ const UnverifiedUsers = () => {
     );
   };
 
+  const onAddPress = () => {
+    navigation.navigate('importResident');
+  };
+
   const renderUserCard = ({ item }) => {
     const UserCard = Animated.createAnimatedComponent(TouchableOpacity);
     
@@ -175,7 +179,7 @@ const UnverifiedUsers = () => {
     );
   };
 
-  const CustomHeader = ({ onRefresh, usersCount }) => (
+  const CustomHeader = ({ onRefresh, usersCount, onAddPress }) => (
     <SafeAreaView style={styles.headerContainer}>
       <StatusBar backgroundColor="#1e3a8a" barStyle="light-content" />
       <View style={styles.statusBarSpace} />
@@ -192,6 +196,12 @@ const UnverifiedUsers = () => {
             onPress={onRefresh}
           >
             <Ionicons name="refresh" size={22} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={onAddPress}
+          >
+            <Ionicons name="add" size={22} color="#fff" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerButton}
@@ -217,6 +227,7 @@ const UnverifiedUsers = () => {
       <CustomHeader 
         onRefresh={fetchUnverifiedUsers}
         usersCount={users.length}
+        onAddPress={onAddPress}
       />
       <View style={styles.container}>
         <FlatList
