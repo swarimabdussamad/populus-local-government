@@ -1,4 +1,4 @@
-import React, { useState,useEffect, useContext } from 'react';
+import React, { useState,useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,6 @@ import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
 import styles from './Styles/shome'
 import { API_URL } from '@/constants/constants';
-import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
-import { WeatherContext } from './_layout'; // Adjust path to match your file structure
 
 // Interfaces for props
 interface Post {
@@ -54,7 +52,35 @@ interface PostModalProps {
   }) => void;
 }
 
+const WeatherCard = () => {
+  const navigation = useNavigation();
 
+  const handlePress = () => {
+    navigation.navigate('Weather'); // Navigate to screen named "Weather"
+  };
+
+  return (
+    <TouchableOpacity 
+      style={styles.weatherCard}
+      onPress={handlePress}
+    >
+      <View style={styles.weatherContent}>
+        <View style={styles.weatherLeft}>
+          <Text style={styles.weatherTemp}>11°</Text>
+          <Text style={styles.weatherLocation}>Montreal, Canada</Text>
+        </View>
+        <View style={styles.weatherRight}>
+          <MaterialCommunityIcons
+            name="weather-partly-cloudy"
+            size={40}
+            color="#666"
+          />
+          <Text style={styles.weatherCondition}>Partly Cloudy</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const PostTypeModal: React.FC<PostTypeModalProps> = ({
   visible,
@@ -171,7 +197,7 @@ const PostModal: React.FC<PostModalProps> = ({
 
 
 
-const Home = ({navigation}) => {
+const Home = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [postTypeModalVisible, setPostTypeModalVisible] = useState(false);
   const [postModalVisible, setPostModalVisible] = useState(false);
@@ -180,7 +206,6 @@ const Home = ({navigation}) => {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { weatherData } = useContext(WeatherContext);
 
   const handlePostTypeSelect = (type: 'announcement' | 'alert') => {
     setPostTypeModalVisible(false);

@@ -13,11 +13,16 @@ const SplashScreen = () => {
     const checkSession = async () => {
       try {
         const token = await AsyncStorage.getItem('userToken');
+        const userRole = await AsyncStorage.getItem('userRole')
         // Simulate a minimum splash screen duration
         await new Promise(resolve => setTimeout(resolve, 1500));
         
         if (token) {
-          router.replace('/home');
+          if (userRole === 'local_government') {
+            router.replace('/home');
+          }else {
+            router.replace('/homed');
+          }
         } else {
           router.replace('/login');
         }

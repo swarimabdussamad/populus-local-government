@@ -86,13 +86,20 @@ const LoginPage = () => {
         throw new Error(data.message || 'Authentication faile.');
       }
 
+
+      
       if (data.success && data.token) {
-        // Save token to AsyncStorage
         await AsyncStorage.setItem('userToken', data.token);
         await AsyncStorage.setItem('currentUsername', username);
+        await AsyncStorage.setItem('userRole', role);
 
-        // Navigate to the home page
-        router.replace('/home');
+
+        // Modified navigation logic based on role
+        if (role === 'local_government') {
+          router.replace('/home');
+        } else {
+          router.replace('/homed');
+        }
       } else {
         throw new Error('Invalid response format.');
       }

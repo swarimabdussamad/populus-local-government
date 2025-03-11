@@ -9,13 +9,15 @@ import {
   Alert,
   Platform,
   KeyboardAvoidingView,
+  Image,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import ImagePickerComponent from "../../components/ImagePickerComponent";
+import * as ImagePicker from "expo-image-picker";
 import { API_URL } from "../../constants/constants";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
+import axios from "axios";
 
 const KERALA_DISTRICTS = [
   "Palakkad",
@@ -155,6 +157,8 @@ const SignUp = () => {
   const [errors, setErrors] = useState({});
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [currentSection, setCurrentSection] = useState(1);
+  const [image, setImage] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
@@ -182,6 +186,76 @@ const SignUp = () => {
       : selfGovType === "Municipality"
       ? PALAKKAD_LOCAL_BODIES.Municipality
       : [];
+  };
+
+  // New image picker function
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Camera roll permission is required to select an image.');
+      return;
+    }
+  
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+  
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+      uploadToCloudinary(result.assets[0].uri);
+    }
+  };
+  
+  // New Cloudinary upload function
+  const uploadToCloudinary = async (uri) => {
+    setUploadingImage(true);
+    try {
+      // Create the FormData object for the image
+      const imageData = new FormData();
+  
+      // Extract the file name and type from the URI
+      const filename = uri.split('/').pop();
+      const match = /\.(\w+)$/.exec(filename || '');
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+  
+      // Append the file data in the correct format for React Native
+      imageData.append('file', {
+        uri,
+        name: filename || 'upload.jpg',
+        type,
+      });
+  
+      // Append the upload preset
+      imageData.append('upload_preset', 'profilepic');
+  
+      // Make the request to Cloudinary
+      const uploadResponse = await axios.post(
+        'https://api.cloudinary.com/v1_1/dnwlvkrqs/image/upload',
+        imageData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+  
+      // Get the secure URL of the uploaded image
+      const imageUrl = uploadResponse.data.secure_url;
+      console.log('Uploaded to Cloudinary:', imageUrl);
+  
+      // Update the formData with the uploaded image URL
+      handleInputChange('photo', imageUrl);
+      
+    } catch (error) {
+      console.error('Cloudinary upload failed:', error);
+      Alert.alert('Upload Failed', 'Could not upload the image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleSignUp = async () => {
@@ -308,10 +382,30 @@ const SignUp = () => {
             {renderInputField("Password", "password", "default", true)}
             <View style={styles.photoContainer}>
               <Text style={styles.photoLabel}>Profile Photo</Text>
-              <ImagePickerComponent
-                value={formData.photo}
-                onChange={(fileUri) => handleInputChange("photo", fileUri)}
-              />
+              
+              {/* New Image Upload UI */}
+              {formData.photo ? (
+                <View style={styles.imagePreviewContainer}>
+                  <Image source={{ uri: formData.photo }} style={styles.imagePreview} />
+                  <TouchableOpacity 
+                    style={styles.changePhotoButton} 
+                    onPress={pickImage}
+                  >
+                    <Text style={styles.changePhotoText}>Change Photo</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity 
+                  style={styles.uploadButton} 
+                  onPress={pickImage}
+                  disabled={uploadingImage}
+                >
+                  <MaterialIcons name="photo-camera" size={24} color="#1e3a8a" />
+                  <Text style={styles.uploadButtonText}>
+                    {uploadingImage ? "Uploading..." : "Upload Photo"}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         );
@@ -477,6 +571,45 @@ const styles = StyleSheet.create({
   picker: { height: 50 },
   photoContainer: { marginTop: 10 },
   photoLabel: { fontSize: 16, color: "#1e293b", marginBottom: 8 },
+  // New image upload styles
+  uploadButton: {
+    flexDirection: "row",
+    height: 50,
+    borderColor: "#e2e8f0",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8fafc",
+    padding: 10,
+  },
+  uploadButtonText: {
+    color: "#1e3a8a",
+    fontSize: 16,
+    marginLeft: 10,
+  },
+  imagePreviewContainer: {
+    alignItems: "center",
+    marginVertical: 10,
+  },
+  imagePreview: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: "#1e3a8a",
+  },
+  changePhotoButton: {
+    padding: 8,
+    backgroundColor: "#1e3a8a",
+    borderRadius: 8,
+  },
+  changePhotoText: {
+    color: "#ffffff",
+    fontSize: 14,
+  },
   navigationButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
