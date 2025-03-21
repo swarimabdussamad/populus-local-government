@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, createContext } from 'react';
 import{useState, } from 'react';
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -25,6 +25,7 @@ const Tab = createBottomTabNavigator();
 const SurveyStack = createNativeStackNavigator();
 const HomeStack = createNativeStackNavigator();
 const MapStack = createNativeStackNavigator();
+const UserStack = createNativeStackNavigator();
 
 // Survey Stack Navigator
 const SurveyStackNavigator = () => {
@@ -65,11 +66,7 @@ const HomeStackNavigator = () => {
         component={Weather}
         options={{ title: "Weather Forecast" }}
       />
-      <HomeStack.Screen
-        name="ImportResident"
-        component={ImportResident}
-        options={{  headerShown: false }}
-      />
+      
     </HomeStack.Navigator>
   );
 };
@@ -89,6 +86,23 @@ const MapStackNavigator = () => {
         options={{ headerShown: false }}
       />
     </MapStack.Navigator>
+  );
+};
+// User Stack Navigator
+const UserStackNavigator = () => {
+  return (
+    <UserStack.Navigator>
+      <UserStack.Screen
+        name="Users"
+        component={Users}
+        options={{ title: "Users" }}
+      />
+      <UserStack.Screen
+        name="ImportResident"
+        component={ImportResident}
+        options={{ title: "Import Resident" }}
+      />
+    </UserStack.Navigator>
   );
 };
 
@@ -151,7 +165,7 @@ const TabLayout = () => {
         />
         <Tab.Screen
           name="Users"
-          component={Users}
+          component={UserStackNavigator}
           options={{
             tabBarIcon: ({ color, size }) => (
               <Feather name="user-check" color={color} size={size} />

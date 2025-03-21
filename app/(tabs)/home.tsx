@@ -187,7 +187,7 @@ const DepartmentPicker: React.FC<{
   const selectedDept = DEPARTMENTS.find((d) => d.name === selectedDepartment);;
 
   const handlePress = () => {
-    navigation.navigate('Weather'); // Navigate to screen named "Weather"
+    navigation.navigate('Weatherscreen'); // Navigate to screen named "Weather"
   };
 
   return (
@@ -819,8 +819,20 @@ const Home = () => {
     );
   };
 
+  const Header = () => {
+    return (
+      <View style={headerStyles.container}>
+        <Text style={headerStyles.title}>POPULUS</Text>
+        <TouchableOpacity style={headerStyles.alertButton}>
+          <Icon name="notifications-outline" size={24} color={COLORS.primary} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   const renderHeader = () => (
     <View>
+    <Header />
       <WeatherWidget />
     </View>
   );
@@ -954,3 +966,32 @@ const Home = () => {
 };
 
 export default Home;
+
+const headerStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14, // Increased vertical padding
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    width: '100%', // Ensure it takes full width
+    elevation: 2, // Add slight shadow on Android
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    marginTop: 16,
+  },
+  title: {
+    fontSize: 24, // Increased font size
+    fontWeight: 'bold',
+    color: COLORS.primary,
+    letterSpacing: 0.5, // Slight letter spacing for better legibility
+  },
+  alertButton: {
+    padding: 8, // Increased touchable area
+  },
+});
