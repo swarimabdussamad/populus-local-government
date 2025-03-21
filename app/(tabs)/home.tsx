@@ -29,6 +29,8 @@ import { Linking } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
+import { WeatherContext } from './_layout'; // Adjust path to match your file structure
 const COLORS = {
   primary: '#2C3E50', // Deep navy blue
   secondary: '#1E88E5', // Vibrant blue
@@ -126,8 +128,7 @@ interface Comment {
   createdAt: Date;
 }
 
-import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
-import { WeatherContext } from './_layout'; // Adjust path to match your file structure
+
 
 interface Post {
   _id: string;
@@ -251,65 +252,7 @@ const DepartmentPicker: React.FC<{
 };
 
 
-const WeatherWidget = () => {
-  return (
-    <View style={styles.weatherWidget}>
-      <View style={styles.weatherHeader}>
-        <View style={styles.locationContainer}>
-          <Feather name="map-pin" size={14} color={COLORS.primary} />
-          <Text style={styles.locationText}>San Francisco, CA</Text>
-        </View>
-        <Text style={styles.dateText}>February 27, 2025</Text>
-      </View>
-      
-      <View style={styles.weatherContent}>
-        <View style={styles.mainWeatherInfo}>
-          <View style={styles.temperatureContainer}>
-            <Text style={styles.temperature}>28°</Text>
-            <View style={styles.highLowContainer}>
-              <View style={styles.highLowItem}>
-                <Feather name="arrow-up" size={12} color={COLORS.textLight} />
-                <Text style={styles.highLowText}>32°</Text>
-              </View>
-              <View style={styles.highLowItem}>
-                <Feather name="arrow-down" size={12} color={COLORS.textLight} />
-                <Text style={styles.highLowText}>24°</Text>
-              </View>
-            </View>
-          </View>
-          
-          <View style={styles.conditionContainer}>
-            <View style={styles.weatherIconContainer}>
-              <Feather name="sun" size={32} color={COLORS.primary} />
-            </View>
-            <Text style={styles.weatherCondition}>Sunny</Text>
-            <Text style={styles.feelsLikeText}>Feels like 30°</Text>
-          </View>
-        </View>
-        
-        <View style={styles.detailsContainer}>
-          <View style={styles.detailItem}>
-            <Feather name="droplet" size={16} color={COLORS.secondary} />
-            <Text style={styles.detailLabel}>Humidity</Text>
-            <Text style={styles.detailValue}>42%</Text>
-          </View>
-          
-          <View style={styles.detailItem}>
-            <Feather name="wind" size={16} color={COLORS.secondary} />
-            <Text style={styles.detailLabel}>Wind</Text>
-            <Text style={styles.detailValue}>5.2 mph</Text>
-          </View>
-          
-          <View style={styles.detailItem}>
-            <Feather name="sun" size={16} color={COLORS.secondary} />
-            <Text style={styles.detailLabel}>UV Index</Text>
-            <Text style={styles.detailValue}>7 High</Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-};
+
 
 // Comment Modal Component
 const CommentModal: React.FC<{
@@ -838,8 +781,8 @@ const Home = () => {
   };
 
   const renderHeader = () => (
-    <View>
-      <WeatherWidget />
+    <View style={styles.section}>
+      <WeatherCard/>
     </View>
   );
   return (
