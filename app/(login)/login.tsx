@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API_URL } from '@/constants/constants';
+import { API_URL } from '@/constants/constants'
 import {
   View,
   Text,
@@ -81,8 +81,10 @@ const LoginPage = () => {
       });
 
       const data = await response.json();
+      console.log(data)
 
       if (!response.ok) {
+        console.log(data)
         throw new Error(data.message || 'Authentication faile.');
       }
 
