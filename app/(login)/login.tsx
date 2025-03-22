@@ -93,12 +93,12 @@ const LoginPage = () => {
       if (data.success && data.token) {
         await AsyncStorage.setItem('userToken', data.token);
         await AsyncStorage.setItem('currentUsername', username);
-        await AsyncStorage.setItem('userRole', role);
+        
 
 
         // Modified navigation logic based on role
         if (role === 'local_government') {
-          router.replace('/home');
+          router.replace('/(login)/login');
         } else {
           router.replace('/homed');
         }
