@@ -106,7 +106,8 @@ const Profile = () => {
               )}
             </View>
             <Text style={styles.profileName}>{profileData.name}</Text>
-            
+            <Text style={styles.profileRole}>{profileData.department || 'Department'}</Text>
+
           </View>
 
           <View style={styles.detailsContainer}>

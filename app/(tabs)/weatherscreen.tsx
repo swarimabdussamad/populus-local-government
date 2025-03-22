@@ -228,6 +228,33 @@ const Weather = () => {
     }
   };
 
+
+  const checkAndShowAlerts = (data) => {
+    const alerts = [];
+    const { temperature, humidity, windspeed, uvIndex } = data;
+
+    if (temperature > THRESHOLDS.temperature.extreme_high) {
+      alerts.push('🌡️ Extreme heat alert! Stay hydrated and avoid outdoor activities.');
+    }
+
+    if (humidity > THRESHOLDS.humidity.very_high) {
+      alerts.push('💧 Very high humidity! Take necessary precautions.');
+    }
+
+    if (windspeed > THRESHOLDS.windSpeed.storm) {
+      alerts.push('💨 Strong winds detected. Please be cautious outdoors.');
+    }
+
+    if (uvIndex > THRESHOLDS.uv_index.high) {
+      alerts.push('☀️ High UV index! Use sun protection.');
+    }
+
+    if (alerts.length > 0) {
+      Alert.alert('Weather Alerts', alerts.join('\n\n'));
+    }
+  };
+
+
   // Use effect to load data initially
   useEffect(() => {
     // If we already have weather data in context, use that
