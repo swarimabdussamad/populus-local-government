@@ -1,4 +1,4 @@
-import React, { useState,useEffect, useContext } from 'react';
+import React, { useState, useEffect,useContext } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { API_URL } from '@/constants/constants';
+import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
+import { WeatherContext } from './_layout'; // Adjust path to match your file structure
 import styles from "./Styles/homestyle";
 import { launchImageLibrary, ImageLibraryOptions, MediaType, ImagePickerResponse } from 'react-native-image-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -29,8 +31,6 @@ import { Linking } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
-import { WeatherContext } from './_layout'; // Adjust path to match your file structure
 const COLORS = {
   primary: '#2C3E50', // Deep navy blue
   secondary: '#1E88E5', // Vibrant blue
@@ -127,7 +127,6 @@ interface Comment {
   message: string;
   createdAt: Date;
 }
-
 
 
 interface Post {
@@ -252,8 +251,6 @@ const DepartmentPicker: React.FC<{
 };
 
 
-
-
 // Comment Modal Component
 const CommentModal: React.FC<{
   visible: boolean;
@@ -360,12 +357,11 @@ const CommentModal: React.FC<{
 const Home = () => {
   
   const navigation = useNavigation();
-
+  const { weatherData } = useContext(WeatherContext);
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
-  const { weatherData } = useContext(WeatherContext);
   const [newPost, setNewPost] = useState({
     department: '',
     title: '',
@@ -781,7 +777,7 @@ const Home = () => {
   };
 
   const renderHeader = () => (
-    <View style={styles.section}>
+    <View>
       <WeatherCard/>
     </View>
   );
@@ -789,7 +785,14 @@ const Home = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
 
-      
+      <TouchableOpacity
+      onPress={() => {
+        console.log("Navigating to ImportResident"); // Debugging
+        navigation.navigate("ImportResident");
+      }}
+    >
+      <Text>Go to Import Resident</Text>
+    </TouchableOpacity>
 
       {isLoading ? (
         <ActivityIndicator size="large" color={COLORS.secondary} style={styles.loader} />

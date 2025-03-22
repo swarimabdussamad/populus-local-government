@@ -1,4 +1,4 @@
-export const API_URL = 'http://192.168.152.31:4000';
+export const API_URL = 'http://192.168.64.31:4000';
 // import os from 'os';
 
 // function getLocalIPAddress(): string {

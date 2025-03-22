@@ -116,9 +116,15 @@ const TabLayout = () => {
             ),
           }}
           listeners={({ navigation }) => ({
-            tabPress: () => {
-              // Optional: You could trigger weather data refresh here
-              // if you want it to refresh every time the Home tab is pressed
+            tabPress: e => {
+              // Prevent default behavior
+              e.preventDefault();
+              
+              // Navigate to the same screen to force refresh
+              navigation.navigate('Home', {
+                refresh: true,
+                timestamp: Date.now(),
+              });
             },
           })}
         />
