@@ -30,7 +30,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import { jwtDecode } from 'jwt-decode';
 
 
 const COLORS = {
@@ -140,7 +140,7 @@ interface DecodedToken {
 const getUserInfoFromToken = async (): Promise<{ username: string; userId: string }> => {
   try {
     const token = await AsyncStorage.getItem('userToken');
-    
+    console.log(token);
     if (!token) {
       console.log('No token found in AsyncStorage');
       return { username: 'Anonymous', userId: '0000' }; // Default values
@@ -220,7 +220,7 @@ const DepartmentPicker: React.FC<{
   const selectedDept = DEPARTMENTS.find((d) => d.name === selectedDepartment);;
 
   const handlePress = () => {
-    navigation.navigate('Weatherscreen'); // Navigate to screen named "Weather"
+    useNavigation.navigate('Weatherscreen'); // Navigate to screen named "Weather"
   };
 
   return (
@@ -696,7 +696,8 @@ const Home = () => {
         };
 
         console.log("Before Submitting post:", postData); // Debugging
-
+        const userInfo = await getUserInfoFromToken();
+        const userId = userInfo.userId;
         const response = await axios.post(`${API_URL}/posts/create`, postData, {
               headers: {
                   'Authorization': `Bearer ${token}` // Include the token in the Authorization header
@@ -1048,7 +1049,5 @@ const headerStyles = StyleSheet.create({
     padding: 8, // Increased touchable area
   },
 });
-function jwtDecode(token: string): DecodedToken {
-  throw new Error('Function not implemented.');
-}
+
 

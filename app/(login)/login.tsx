@@ -98,7 +98,7 @@ const LoginPage = () => {
 
         // Modified navigation logic based on role
         if (role === 'local_government') {
-          router.replace('/(login)/login');
+          router.replace('/home');
         } else {
           router.replace('/homed');
         }
