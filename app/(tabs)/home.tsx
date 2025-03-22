@@ -29,6 +29,10 @@ import { Linking } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+
+
 const COLORS = {
   primary: '#2C3E50', // Deep navy blue
   secondary: '#1E88E5', // Vibrant blue
@@ -125,6 +129,35 @@ interface Comment {
   message: string;
   createdAt: Date;
 }
+
+interface DecodedToken {
+  username: string;
+  userId: string;
+  exp: number;
+  // Add any other properties that might be in your token
+}
+
+const getUserInfoFromToken = async (): Promise<{ username: string; userId: string }> => {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    
+    if (!token) {
+      console.log('No token found in AsyncStorage');
+      return { username: 'Anonymous', userId: '0000' }; // Default values
+    }
+    
+    const decodedToken = jwtDecode(token) as DecodedToken;
+    
+    return {
+      username: decodedToken.username || 'Anonymous',
+      userId: decodedToken.userId || '0000',
+       // Assuming presidentId is the access value
+    };
+  } catch (error) {
+    console.error('Error getting user information from token:', error);
+    return { username: 'Anonymous', userId: '0000' }; // Default values on error
+  }
+};
 
 import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
 import { WeatherContext } from './_layout'; // Adjust path to match your file structure
@@ -422,7 +455,13 @@ const Home = () => {
   const fetchPosts = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/posts/display`);
+      const userInfo = await getUserInfoFromToken();
+        const access = userInfo.username;
+        const response = await axios.get(`${API_URL}/posts/display`, {
+          params: {
+              access: access // Pass the access value from the token
+          }
+      });
       console.log("display");
       console.log("DEPARTMENTS Data:", DEPARTMENTS.map((d) => d.id));
 
@@ -457,7 +496,9 @@ const Home = () => {
 
   const handleReaction = async (postId: string, type: 'like' | 'dislike') => {
     try {
-      const userId = 'current-user-id';
+      const userInfo = await getUserInfoFromToken();
+        const userId = userInfo.userId;
+   
       const response = await axios.post(`${API_URL}/posts/${postId}/reaction`, {
         userId,
         type
@@ -497,9 +538,11 @@ const Home = () => {
   const handleAddComment = async (postId: string, message: string) => {
     console.log( "postID" ,postId  );
     console.log("message",message);
+    const userInfo = await getUserInfoFromToken();
+        const username = userInfo.username;
     try {
       const response = await axios.post(`${API_URL}/posts/${postId}/comments`, {
-        username: 'Sreekrishnapuram', // Replace with actual username
+        username,
         message
       });
       console.log(response);
@@ -636,19 +679,29 @@ const Home = () => {
 
   const submitPost = async () => {
     if (!validatePost()) return;
-
+          // Get the token from AsyncStorage
+        const token = await AsyncStorage.getItem('userToken');
+        if (!token) {
+          alert("User token not found. Please log in again.");
+          console.log(token);
+          return;
+        }
       try {
          const postData = {
           department: newPost.department,
           title: newPost.title.trim(),
           message: newPost.message.trim(),
           imageUri: newPost.imageUri,
-          access: ["sreekrishnapuram"] ,
+          
         };
 
         console.log("Before Submitting post:", postData); // Debugging
 
-        const response = await axios.post(`${API_URL}/posts/create`, postData);
+        const response = await axios.post(`${API_URL}/posts/create`, postData, {
+              headers: {
+                  'Authorization': `Bearer ${token}` // Include the token in the Authorization header
+              }
+          });
         console.log('After Post submission response:', response.data);
         
         fetchPosts();
@@ -995,3 +1048,7 @@ const headerStyles = StyleSheet.create({
     padding: 8, // Increased touchable area
   },
 });
+function jwtDecode(token: string): DecodedToken {
+  throw new Error('Function not implemented.');
+}
+
