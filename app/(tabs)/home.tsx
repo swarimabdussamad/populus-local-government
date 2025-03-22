@@ -161,8 +161,6 @@ const getUserInfoFromToken = async (): Promise<{ username: string; userId: strin
   }
 };
 
-import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
-import { WeatherContext } from './_layout'; // Adjust path to match your file structure
 
 interface Post {
   _id: string;
@@ -222,7 +220,7 @@ const DepartmentPicker: React.FC<{
   const selectedDept = DEPARTMENTS.find((d) => d.name === selectedDepartment);;
 
   const handlePress = () => {
-    useNavigation.navigate('Weatherscreen'); // Navigate to screen named "Weather"
+    // Navigate to screen named "Weather"
   };
 
   return (
@@ -393,12 +391,12 @@ const CommentModal: React.FC<{
 const Home = () => {
   
   const navigation = useNavigation();
-  const { weatherData } = useContext(WeatherContext);
+ 
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
-  const { weatherData } = useContext(WeatherContext);
+  
   const [newPost, setNewPost] = useState({
     department: '',
     title: '',
