@@ -228,6 +228,7 @@ const Weather = () => {
     }
   };
 
+
   const checkAndShowAlerts = (data) => {
     const alerts = [];
     const { temperature, humidity, windspeed, uvIndex } = data;
@@ -252,6 +253,7 @@ const Weather = () => {
       Alert.alert('Weather Alerts', alerts.join('\n\n'));
     }
   };
+
 
   // Use effect to load data initially
   useEffect(() => {

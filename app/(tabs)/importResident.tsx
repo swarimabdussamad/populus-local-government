@@ -52,7 +52,31 @@ interface ResidentData {
   mappedHouse: string;
   username: string;
   password: string;
+  
+  // Add index signature to allow string indexing
+  [key: string]: string;
 }
+
+const columnWidths: { [key: string]: number } = {
+  name: 150,
+  dateOfBirth: 120,
+  gender: 80,
+  email: 200,
+  mobileNo: 120,
+  aadhaarNo: 150,
+  rationId: 120,
+  district: 120,
+  place: 120,
+  username: 120,
+  photo: 150,
+  mappedHouse: 200,
+  income: 100,
+  houseDetails: 100,
+  wardNumber: 100,
+  locality: 120,
+  isOwnerHome: 100,
+};
+
 
 interface ValidationError {
   row: number;
@@ -144,6 +168,13 @@ const ImportResident: React.FC = () => {
         setIsLoading(false);
         return;
       }
+      const convertExcelDate = (serial: number): string => {
+        // Excel's epoch starts on January 1, 1900
+        const epoch = new Date(1900, 0, 1);
+        // Subtract 1 because Excel considers 1/1/1900 as day 1
+        const date = new Date(epoch.getTime() + (serial - 1) * 86400 * 1000);
+        return date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      };
       
       // Process and transform data
       const processedData = jsonData.map((row: any) => {
@@ -152,7 +183,13 @@ const ImportResident: React.FC = () => {
         
         Object.entries(COLUMN_MAPPING).forEach(([excelCol, dataField]) => {
           if (excelCol in row) {
-            residentData[dataField as keyof ResidentData] = row[excelCol]?.toString() || '';
+            // Convert Excel serial dates to readable format
+            if (dataField === 'dateOfBirth' && typeof row[excelCol] === 'number') {
+              residentData[dataField] = convertExcelDate(row[excelCol]);
+            } else {
+              residentData[dataField] = row[excelCol]?.toString() || '';
+            }
+            
           }
         });
         
@@ -237,12 +274,12 @@ const ImportResident: React.FC = () => {
     if (data.length === 0) return;
     
     // Get all keys from the first record
-    const allKeys = Object.keys(data[0]) as (keyof ResidentData)[];
+    const allKeys = Object.keys(data[0]);
     const displayKeys = [
       'name', 'email', 'mobileNo', 'aadhaarNo', 'rationId', 'district', 'place', 'username'
     ];
     
-    setTableHeaders(['Row', ...displayKeys]);
+    setTableHeaders(['Row', ...allKeys]);
     
     // Create rows for table
     const rows = data.map((resident, index) => {
@@ -257,7 +294,7 @@ const ImportResident: React.FC = () => {
       
       return [
         String(index + 1),
-        ...displayKeys.map(key => {
+        ...allKeys.map(key => {
           const value = resident[key] || '';
           // Check if this cell has an error
           const cellError = rowErrors.find(err => 
@@ -430,146 +467,173 @@ const ImportResident: React.FC = () => {
     }
   }, [previewMode]);
 
+  // Function to display all columns and their values for a row
+  const showAllColumnsForRow = (rowIndex: number) => {
+    if (rowIndex < 0 || rowIndex >= parsedData.length) return;
+    
+    const resident = parsedData[rowIndex];
+    const allDetails = Object.entries(resident).map(([key, value]) => {
+      return `${key}: ${value}`;
+    }).join('\n');
+    
+    Alert.alert(
+      `Details for Row ${rowIndex + 1}`,
+      allDetails
+    );
+  };
+
   return (
     <ScrollView style={styles.scrollView}>
-  <View style={styles.container}>
-    <Text style={styles.title}>Bulk Resident Registration</Text>
+      <View style={styles.container}>
+        <Text style={styles.title}>Adding Group Resident Registration</Text>
 
-    <View style={styles.instructionCard}>
-      <Text style={styles.instructionTitle}>Instructions:</Text>
-      <Text style={styles.instructionText}>
-        1. Download the Excel template using the button below.
-      </Text>
-      <Text style={styles.instructionText}>
-        2. Fill in the resident details in the Excel sheet.
-      </Text>
-      <Text style={styles.instructionText}>
-        3. Upload the completed Excel file.
-      </Text>
-      <Text style={styles.instructionText}>
-        4. Review the data and fix any validation errors.
-      </Text>
-      <Text style={styles.instructionText}>
-        5. Submit to register all residents at once.
-      </Text>
+        <View style={styles.instructionCard}>
+          <Text style={styles.instructionTitle}>Instructions:</Text>
+          <Text style={styles.instructionText}>
+            1. Download the Excel template using the button below.
+          </Text>
+          <Text style={styles.instructionText}>
+            2. Fill in the resident details in the Excel sheet.
+          </Text>
+          <Text style={styles.instructionText}>
+            3. Upload the completed Excel file.
+          </Text>
+          <Text style={styles.instructionText}>
+            4. Review the data and fix any validation errors.
+          </Text>
+          <Text style={styles.instructionText}>
+            5. Submit to register all residents at once.
+          </Text>
 
-      <TouchableOpacity style={styles.button} onPress={downloadTemplate}>
-        <Text style={styles.buttonText}>Download Template</Text>
-      </TouchableOpacity>
-    </View>
-
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>Upload Excel File</Text>
-      <TouchableOpacity
-        style={styles.uploadButton}
-        onPress={pickExcelFile}
-        disabled={isLoading || isSubmitting}
-      >
-        <Text style={styles.uploadButtonText}>
-          {fileSelected ? fileSelected : 'Select Excel File'}
-        </Text>
-      </TouchableOpacity>
-
-      {isLoading && (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#003366" />
-          <Text style={styles.loaderText}>Parsing data...</Text>
+          <TouchableOpacity style={styles.button} onPress={downloadTemplate}>
+            <Text style={styles.buttonText}>Download Template</Text>
+          </TouchableOpacity>
         </View>
-      )}
 
-      {parsedData.length > 0 && !isLoading && (
-        <>
-          <View style={styles.dataInfoContainer}>
-            <Text style={styles.dataInfoText}>
-              {parsedData.length} residents found in file
-            </Text>
-            {validationErrors.length > 0 && (
-              <Text style={styles.errorInfoText}>
-                {validationErrors.length} validation errors found
-              </Text>
-            )}
-
-            <TouchableOpacity
-              style={styles.toggleButton}
-              onPress={togglePreviewMode}
-            >
-              <Text style={styles.toggleButtonText}>
-                {previewMode === 'all' ? 'Show Errors Only' : 'Show All Data'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Custom Table */}
-          <ScrollView horizontal>
-            <View>
-              {/* Table Header */}
-              <View style={styles.tableHeader}>
-                {tableHeaders.map((header, index) => (
-                  <Text key={`header-${index}`} style={styles.tableHeaderText}>
-                    {header}
-                  </Text>
-                ))}
-              </View>
-
-              {/* Table Rows */}
-              {tableData.map((row, rowIndex) => (
-                <View key={`row-${rowIndex}`} style={styles.tableRow}>
-                  {row.map((cell, cellIndex) => (
-                    <Text key={`cell-${cellIndex}`} style={styles.tableCell}>
-                      {cell}
-                    </Text>
-                  ))}
-                </View>
-              ))}
-            </View>
-          </ScrollView>
-
-          {validationErrors.length > 0 && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorTitle}>Validation Errors:</Text>
-            {validationErrors.map((error, index) => (
-              <View key={`error-${index}`} style={styles.errorItem}>
-                <Text style={styles.errorText}>
-                  <Text style={styles.errorBold}>Row {error.row + 1}</Text>: {error.column} - {error.message}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-          {tableData.length === 0 && previewMode === 'errors' && (
-            <Text style={styles.noErrorsText}>No validation errors found!</Text>
-          )}
-
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Upload Excel File</Text>
           <TouchableOpacity
-            style={[
-              styles.submitButton,
-              (validationErrors.length > 0 || isSubmitting) && styles.disabledButton,
-            ]}
-            onPress={handleSubmit}
-            disabled={validationErrors.length > 0 || isSubmitting}
+            style={styles.uploadButton}
+            onPress={pickExcelFile}
+            disabled={isLoading || isSubmitting}
           >
-            <Text style={styles.submitButtonText}>
-              {isSubmitting ? 'Submitting...' : 'Register All Residents'}
+            <Text style={styles.uploadButtonText}>
+              {fileSelected ? fileSelected : 'Select Excel File'}
             </Text>
           </TouchableOpacity>
 
-          {isSubmitting && (
-            <View style={styles.progressContainer}>
-              <Text style={styles.progressText}>
-                Progress: {successCount + failCount} / {parsedData.length}
-              </Text>
-              <Text style={styles.successText}>Success: {successCount}</Text>
-              {failCount > 0 && (
-                <Text style={styles.failText}>Failed: {failCount}</Text>
-              )}
+          {isLoading && (
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator size="large" color="#003366" />
+              <Text style={styles.loaderText}>Parsing data...</Text>
             </View>
           )}
-        </>
-      )}
-    </View>
-  </View>
-</ScrollView>
+
+          {parsedData.length > 0 && !isLoading && (
+            <>
+              <View style={styles.dataInfoContainer}>
+                <Text style={styles.dataInfoText}>
+                  {parsedData.length} residents found in file
+                </Text>
+                {validationErrors.length > 0 && (
+                  <Text style={styles.errorInfoText}>
+                    {validationErrors.length} validation errors found
+                  </Text>
+                )}
+
+                <TouchableOpacity
+                  style={styles.toggleButton}
+                  onPress={togglePreviewMode}
+                >
+                  <Text style={styles.toggleButtonText}>
+                    {previewMode === 'all' ? 'Show Errors Only' : 'Show All Data'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Custom Table with clickable rows */}
+              <ScrollView horizontal>
+                <View>
+                   {/* Table Header */}
+                  <View style={styles.tableHeader}>
+                    {tableHeaders.map((header, index) => (
+                      <View
+                        key={`header-${index}`}
+                        style={[styles.tableHeaderCell, { width: columnWidths[header] || 120 }]}
+                      >
+                        <Text style={styles.tableHeaderText}>{header}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  {/* Table Rows */}
+                  {tableData.map((row, rowIndex) => (
+                    <TouchableOpacity
+                      key={`row-${rowIndex}`}
+                      style={styles.tableRow}
+                      onPress={() => showAllColumnsForRow(parseInt(row[0]) - 1)}
+                    >
+                      {row.map((cell, cellIndex) => (
+                        <View
+                          key={`cell-${cellIndex}`}
+                          style={[styles.tableCell, { width: columnWidths[tableHeaders[cellIndex]] || 120 }]}
+                        >
+                          <Text style={styles.tableCellText} numberOfLines={1} ellipsizeMode="tail">
+                            {cell}
+                          </Text>
+                        </View>
+                      ))}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+
+              {validationErrors.length > 0 && (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorTitle}>Validation Errors:</Text>
+                  {validationErrors.map((error, index) => (
+                    <View key={`error-${index}`} style={styles.errorItem}>
+                      <Text style={styles.errorText}>
+                        <Text style={styles.errorBold}>Row {error.row + 1}</Text>: {error.column} - {error.message}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {tableData.length === 0 && previewMode === 'errors' && (
+                <Text style={styles.noErrorsText}>No validation errors found!</Text>
+              )}
+
+              <TouchableOpacity
+                style={[
+                  styles.submitButton,
+                  (validationErrors.length > 0 || isSubmitting) && styles.disabledButton,
+                ]}
+                onPress={handleSubmit}
+                disabled={validationErrors.length > 0 || isSubmitting}
+              >
+                <Text style={styles.submitButtonText}>
+                  {isSubmitting ? 'Submitting...' : 'Register All Residents'}
+                </Text>
+              </TouchableOpacity>
+
+              {isSubmitting && (
+                <View style={styles.progressContainer}>
+                  <Text style={styles.progressText}>
+                    Progress: {successCount + failCount} / {parsedData.length}
+                  </Text>
+                  <Text style={styles.successText}>Success: {successCount}</Text>
+                  {failCount > 0 && (
+                    <Text style={styles.failText}>Failed: {failCount}</Text>
+                  )}
+                </View>
+              )}
+            </>
+          )}
+        </View>
+      </View>
+    </ScrollView>
   );
 };
 
@@ -690,12 +754,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
+  tableHeaderCell: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRightWidth: 1,
+    borderRightColor: '#ddd',
+    paddingHorizontal: 5,
+  },
   tableHeaderText: {
     flex: 1,
     fontWeight: 'bold',
     textAlign: 'center',
     color: '#003366',
     paddingHorizontal: 8,
+  },
+  tableCellText: {
+    textAlign: 'center',
   },
   tableRow: {
     flexDirection: 'row',

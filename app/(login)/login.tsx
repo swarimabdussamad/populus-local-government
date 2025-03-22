@@ -96,6 +96,7 @@ const LoginPage = () => {
         await AsyncStorage.setItem('userRole', role);
 
 
+
         // Modified navigation logic based on role
         if (role === 'local_government') {
           router.replace('/home');

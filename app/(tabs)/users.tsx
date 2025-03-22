@@ -18,14 +18,29 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 
+interface User {
+  _id: string;
+  name: string;
+  photo?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  // Add other properties as needed
+}
+
+interface CustomHeaderProps {
+  onRefresh: () => void;
+  usersCount: number;
+  onAddPress: () => void;
+}
 
 const UnverifiedUsers = () => {
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation();
-
+const router = useRouter();
   const fetchUnverifiedUsers = async () => {
     try {
       setLoading(true);
@@ -35,7 +50,7 @@ const UnverifiedUsers = () => {
       }
       const data = await response.json();
       setUsers(data);
-    } catch {
+    } catch (error) {
       console.error('Error fetching unverified users:', error);
       Alert.alert('Error', 'Failed to fetch users. Please try again.');
     } finally {
@@ -55,12 +70,8 @@ const UnverifiedUsers = () => {
       fetchUnverifiedUsers();
     }, [])
   );
-  interface User {
-  _id: string;
-  name: string;
-  // Add other properties as needed
-}
-  const handleVerify = async (user: { name: any; _id: any; }) => {
+
+  const handleVerify = async (user: User) => {
     try {
       const currentPresidentId = await AsyncStorage.getItem('currentUsername');
 
@@ -74,13 +85,11 @@ const UnverifiedUsers = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...user, presidentId: currentPresidentId }),
-        
       });
-      
+
       console.log('Response status:', response.status);
       const responseData = await response.clone().json();
       console.log('Response data:', responseData);
-
 
       if (!response.ok) {
         throw new Error('Failed to verify user.');
@@ -99,7 +108,7 @@ const UnverifiedUsers = () => {
     }
   };
 
-  const handleDelete = async (userId: any, userName: any) => {
+  const handleDelete = async (userId: string, userName: string) => {
     Alert.alert(
       'Confirm Deletion',
       `Are you sure you want to delete ${userName}?`,
@@ -130,7 +139,17 @@ const UnverifiedUsers = () => {
     );
   };
 
-  const renderUserCard = ({ item }) => {
+  const onAddPress = () => {
+    try {
+      console.log("Attempting to navigate to importResident");
+      (navigation as any).navigate('ImportResident');
+      console.log("Navigation call completed");
+    } catch (error) {
+      console.error("Navigation error:", error);
+    }
+  };
+
+  const renderUserCard = ({ item }: { item: User }) => {
     const UserCard = Animated.createAnimatedComponent(TouchableOpacity);
     
     return (
@@ -175,7 +194,7 @@ const UnverifiedUsers = () => {
     );
   };
 
-  const CustomHeader = ({ onRefresh, usersCount }) => (
+  const CustomHeader: React.FC<CustomHeaderProps> = ({ onRefresh, usersCount, onAddPress }) => (
     <SafeAreaView style={styles.headerContainer}>
       <StatusBar backgroundColor="#1e3a8a" barStyle="light-content" />
       <View style={styles.statusBarSpace} />
@@ -192,6 +211,12 @@ const UnverifiedUsers = () => {
             onPress={onRefresh}
           >
             <Ionicons name="refresh" size={22} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={onAddPress}
+          >
+            <Ionicons name="add" size={22} color="#fff" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerButton}
@@ -217,6 +242,7 @@ const UnverifiedUsers = () => {
       <CustomHeader 
         onRefresh={fetchUnverifiedUsers}
         usersCount={users.length}
+        onAddPress={onAddPress}
       />
       <View style={styles.container}>
         <FlatList
@@ -327,15 +353,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatarContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#4f46e5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
+ 
   avatarText: {
     color: '#fff',
     fontSize: 24,

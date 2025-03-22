@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
+import{useState, } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Animated, ScrollView, Dimensions, SafeAreaView, StatusBar, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Platform } from 'react-native';
+
 
 export type RootStackParamList = {
   SurveyResults: { surveyId: string };
