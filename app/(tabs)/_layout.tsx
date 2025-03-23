@@ -1,5 +1,4 @@
-import React, { useEffect, useCallback, createContext } from 'react';
-import{useState, } from 'react';
+import React, { createContext, useState } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Foundation, MaterialCommunityIcons, Feather, Ionicons } from "@expo/vector-icons";
@@ -7,7 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 
 // Import your screens
-import HomeMain from "./home";
+import Home from "./home";
 import Weather from "@/app/(tabs)/weatherscreen";
 import Map from "@/app/(tabs)/map";
 import HouseDetails from '@/app/(tabs)/HouseDetails';
@@ -58,7 +57,7 @@ const HomeStackNavigator = () => {
     <HomeStack.Navigator>
       <HomeStack.Screen
         name="HomeScreen"
-        component={HomeMain}
+        component={Home}
         options={{ headerShown: false }} 
       />
       <HomeStack.Screen
@@ -66,7 +65,11 @@ const HomeStackNavigator = () => {
         component={Weather}
         options={{ title: "Weather Forecast" }}
       />
-      
+      <HomeStack.Screen
+        name="ImportResident"
+        component={ImportResident}
+        options={{  headerShown: false }}
+      />
     </HomeStack.Navigator>
   );
 };

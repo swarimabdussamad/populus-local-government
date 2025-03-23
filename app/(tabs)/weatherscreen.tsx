@@ -535,3 +535,7 @@ const styles = StyleSheet.create({
 });
 
 export default Weather;
+
+function checkAndShowAlerts(processedData: { temperature: any; humidity: any; windspeed: any; weatherCode: any; precipitation: any; cloudCover: any; pressure: any; uvIndex: any; rainProbability: any; location: any; coordinates: { latitude: any; longitude: any; }; }) {
+  throw new Error('Function not implemented.');
+}

@@ -24,12 +24,10 @@ type Plot = {
   id: string;
   image: string;
   type: string;
-  insights?: string;
 };
 
 type SurveyResult = {
   image?: string;
-  insights?: string;
 };
 
 const SurveyResults = () => {
@@ -78,8 +76,7 @@ const SurveyResults = () => {
             {
               id: `${endpoint}-${Date.now()}`,
               image: data.image,
-              type: endpoint,
-              insights: data.insights
+              type: endpoint
             }
           ];
         });
@@ -119,8 +116,7 @@ const SurveyResults = () => {
           setPlots([{
             id: `initial-${Date.now()}`,
             image: data.image,
-            type: 'result',
-            insights: data.insights
+            type: 'result'
           }]);
         }
       } catch (err: any) {
@@ -168,12 +164,6 @@ const SurveyResults = () => {
             resizeMode="contain"
           />
         </PinchGestureHandler>
-        {plot.insights && (
-          <View style={styles.insightsContainer}>
-            <Text style={styles.insightsTitle}>Insights:</Text>
-            <Text style={styles.insightsText}>{plot.insights}</Text>
-          </View>
-        )}
         {loadingType === plot.type && (
           <View style={styles.overlayLoader}>
             <ActivityIndicator size="large" color="#0000ff" />
@@ -250,13 +240,13 @@ const styles = StyleSheet.create({
   },
   plotContainer: {
     width: Dimensions.get('window').width,
-    minHeight: Dimensions.get('window').height * 0.5,
+    height: Dimensions.get('window').height * 0.5,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#EEEEEE',
-    paddingBottom: 20,
+    paddingBottom: 10,
     position: 'relative',
   },
   overlayLoader: {
@@ -277,25 +267,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '90%',
-    height: Dimensions.get('window').height * 0.35,
-  },
-  insightsContainer: {
-    width: '90%',
-    padding: 15,
-    marginTop: 10,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-  },
-  insightsTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
-  },
-  insightsText: {
-    fontSize: 14,
-    color: '#555',
-    lineHeight: 20,
+    height: '90%',
   },
   buttonContainer: {
     flexDirection: 'row',

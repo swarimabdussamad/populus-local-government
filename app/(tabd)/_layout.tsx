@@ -4,13 +4,14 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Foundation, MaterialCommunityIcons, Feather, Ionicons } from "@expo/vector-icons";
 
 // Import your screens
-import HomeDepartment from "./homed"
+import Home from "./homed"
 import Weather from "@/app/(tabd)/weatherscreen";
 import Map from "@/app/(tabd)/map";
 import HouseDetails from '@/app/(tabd)/HouseDetails'; // Adjust the path if needed
 import SurveyList from "@/app/(tabd)/survey/SurveyList";
 import NewSurvey from "@/app/(tabd)/survey/NewSurvey";
 import Profile from "@/app/(tabd)/profiled";
+import HomeDepartment from "./homed";
 
 const Tab = createBottomTabNavigator();
 const SurveyStack = createNativeStackNavigator();

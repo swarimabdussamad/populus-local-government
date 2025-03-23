@@ -12,6 +12,7 @@ import {
   Platform,
   StatusBar,
   SafeAreaView,
+  Modal,
 } from 'react-native';
 import { API_URL } from '@/constants/constants';
 import { useFocusEffect } from '@react-navigation/native';
@@ -19,7 +20,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-
+import MapView, { Marker } from 'react-native-maps';
 interface User {
   _id: string;
   name: string;
@@ -152,6 +153,33 @@ const router = useRouter();
   const renderUserCard = ({ item }: { item: User }) => {
     const UserCard = Animated.createAnimatedComponent(TouchableOpacity);
     
+    // Function to extract coordinates from mappedHouse string
+    const extractCoordinates = (mappedHouseStr: string | null | undefined) => {
+      if (!mappedHouseStr) return null;
+      
+      try {
+        // Extract latitude and longitude using regex
+        const latMatch = mappedHouseStr.match(/Latitude:\s*(-?\d+\.?\d*)/i);
+        const lngMatch = mappedHouseStr.match(/Longitude:\s*(-?\d+\.?\d*)/i);
+        
+        if (latMatch && lngMatch) {
+          const latitude = parseFloat(latMatch[1]);
+          const longitude = parseFloat(lngMatch[1]);
+          
+          if (!isNaN(latitude) && !isNaN(longitude)) {
+            return { latitude, longitude };
+          }
+        }
+        return null;
+      } catch (error) {
+        console.error('Error extracting coordinates:', error);
+        return null;
+      }
+    };
+    
+    const coordinates = extractCoordinates(item.mappedHouse);
+    console.log("coordinates:",coordinates);
+    
     return (
       <UserCard style={styles.userCard}>
         <View style={styles.userHeader}>
@@ -164,16 +192,113 @@ const router = useRouter();
               />
             ) : (
               <Text style={styles.avatarText}>
-                {item.name.charAt(0).toUpperCase()}
+                {item.name ? item.name.charAt(0).toUpperCase() : '?'}
               </Text>
             )}
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{item.name}</Text>
-            <Text style={styles.userDetail}>DOB: {item.dateOfBirth}</Text>
-            <Text style={styles.userDetail}>Gender: {item.gender}</Text>
+            <Text style={styles.userName}>{item.name || 'No Name'}</Text>
+            <Text style={styles.userDetail}>Username: {item.username || 'N/A'}</Text>
+            <Text style={styles.userDetail}>Email: {item.email || 'N/A'}</Text>
+            <Text style={styles.userDetail}>Mobile: {item.mobileNo || 'N/A'}</Text>
+            
           </View>
         </View>
+  
+        <View style={styles.detailSection}>
+          <Text style={styles.sectionTitle}>Personal Information</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Date of Birth:</Text>
+            <Text style={styles.detailValue}>{item.dateOfBirth || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Gender:</Text>
+            <Text style={styles.detailValue}>{item.gender || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Occupation:</Text>
+            <Text style={styles.detailValue}>{item.occupation || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Income:</Text>
+            <Text style={styles.detailValue}>{item.income || 'N/A'}</Text>
+          </View>
+        </View>
+  
+        <View style={styles.detailSection}>
+          <Text style={styles.sectionTitle}>Identification</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Aadhaar No:</Text>
+            <Text style={styles.detailValue}>{item.aadhaarNo || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Ration ID:</Text>
+            <Text style={styles.detailValue}>{item.rationId || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Ration Card Type:</Text>
+            <Text style={styles.detailValue}>{item.rationcardType || 'N/A'}</Text>
+          </View>
+        </View>
+  
+        <View style={styles.detailSection}>
+          <Text style={styles.sectionTitle}>Address Information</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>House Details:</Text>
+            <Text style={styles.detailValue}>{item.houseDetails || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Is Owner:</Text>
+            <Text style={styles.detailValue}>{item.isOwnerHome || 'N/A'}</Text>
+          </View>
+          
+          {/* Replace the text output with a map */}
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Location:</Text>
+            {coordinates ? (
+              <View style={styles.mapContainer}>
+                <MapView
+                  style={styles.map}
+                  initialRegion={{
+                    latitude: coordinates.latitude,
+                    longitude: coordinates.longitude,
+                    latitudeDelta: 0.005,
+                    longitudeDelta: 0.005,
+                  }}
+                >
+                  <Marker
+                    coordinate={{
+                      latitude: coordinates.latitude,
+                      longitude: coordinates.longitude,
+                    }}
+                    title={item.name || 'Location'}
+                    description={item.houseDetails || 'House location'}
+                  />
+                </MapView>
+              </View>
+            ) : (
+              <Text style={styles.detailValue}>No location data available</Text>
+            )}
+          </View>
+          
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Ward Number:</Text>
+            <Text style={styles.detailValue}>{item.wardNumber || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Local Body:</Text>
+            <Text style={styles.detailValue}>{item.localBody || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Self Gov Type:</Text>
+            <Text style={styles.detailValue}>{item.selfGovType || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>District:</Text>
+            <Text style={styles.detailValue}>{item.district || 'N/A'}</Text>
+          </View>
+        </View>
+  
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={[styles.button, styles.verifyButton]}
@@ -435,6 +560,82 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
+  },
+  detailSection: {
+    marginVertical: 8,
+    paddingHorizontal: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#555',
+    width: '40%',
+  },
+  detailValue: {
+    fontSize: 14,
+    color: '#333',
+    flex: 1,
+  },
+ 
+  mapLink: {
+    flex: 1,
+  },
+  mapLinkText: {
+    color: '#0066cc',
+    textDecorationLine: 'underline',
+  },
+  mapIcon: {
+    marginLeft: 4,
+  },
+  modalContainer: {
+    flex: 1,
+  },
+  mapHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  mapTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  
+  mapFooter: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#ccc',
+  },
+  coordinatesText: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  mapContainer: {
+    width: '65%',
+    height: 150,
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginTop: 5,
+  },
+  map: {
+    width: '100%',
+    height: '100%',
   },
 });
 
