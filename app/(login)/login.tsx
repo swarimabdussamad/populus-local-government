@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API_URL } from '@/constants/constants'
+import { API_URL } from '@/constants/constants';
 import {
   View,
   Text,
@@ -14,13 +14,12 @@ import DropdownComponent from '@/components/DropdownComponent';
 import { Link, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState(null);
   const [errors, setErrors] = useState({ username: '', password: '', role: '' });
-  const [isLoading, setIsLoading] = useState(false); // Initialize loading state
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   // Validation function
@@ -57,7 +56,7 @@ const LoginPage = () => {
   const handleLogin = async () => {
     if (!validateForm()) return;
 
-    setIsLoading(true); // Start loading
+    setIsLoading(true);
 
     try {
       const loginData = {
@@ -66,13 +65,10 @@ const LoginPage = () => {
         role,
       };
 
-      // Determine endpoint based on role
       const endpoint =
         role === 'local_government'
           ? `${API_URL}/government/login`
           : `${API_URL}/department/login`;
-
-      console.log('Sending login request:', loginData);
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -81,23 +77,16 @@ const LoginPage = () => {
       });
 
       const data = await response.json();
-      console.log(data)
 
       if (!response.ok) {
-        console.log(data)
-        throw new Error(data.message || 'Authentication faile.');
+        throw new Error(data.message || 'Authentication failed.');
       }
 
-
-      
       if (data.success && data.token) {
         await AsyncStorage.setItem('userToken', data.token);
         await AsyncStorage.setItem('currentUsername', username);
         await AsyncStorage.setItem('userRole', role);
 
-
-
-        // Modified navigation logic based on role
         if (role === 'local_government') {
           router.replace('/home');
         } else {
@@ -112,12 +101,23 @@ const LoginPage = () => {
         (error as Error).message || 'Something went wrong. Please try again.'
       );
     } finally {
-      setIsLoading(false); // Stop loading
+      setIsLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Login</Text>
+        <TouchableOpacity
+          style={styles.adminButton}
+          onPress={() => router.push('/adminlogin')} // Navigate to the dashboard page
+        >
+          <Text style={styles.adminButtonText}>Admin</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Logo */}
       <Image
         source={require('../../assets/images/logo.png')}
@@ -170,7 +170,7 @@ const LoginPage = () => {
       <TouchableOpacity
         style={styles.loginButton}
         onPress={handleLogin}
-        disabled={isLoading} // Disable button while loading
+        disabled={isLoading}
       >
         {isLoading ? (
           <ActivityIndicator color="#fff" />
@@ -178,11 +178,6 @@ const LoginPage = () => {
           <Text style={styles.loginText}>Log In</Text>
         )}
       </TouchableOpacity>
-
-      {/* Create New Account */}
-      <Link href="/signup" style={styles.createAccountButton}>
-        Create new account
-      </Link>
 
       <Text style={styles.footerText}>POPULUS</Text>
     </View>
@@ -195,6 +190,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     padding: 20,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    padding: 20,
+  },
+  headerText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1b1b7e',
+  },
+  adminButton: {
+    borderWidth: 1,
+    borderColor: '#1b1b7e', // Border color for the button
+    borderRadius: 8, // Rounded corners
+    paddingVertical: 8, // Vertical padding
+    paddingHorizontal: 16, // Horizontal padding
+  },
+  adminButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1b1b7e', // Text color matching the border
   },
   logo: {
     width: 200,
@@ -233,18 +252,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  createAccountButton: {
-    borderWidth: 1,
-    borderColor: '#1b1b7e',
-    width: '100%',
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-    marginTop: 20,
-    textAlign: 'center',
-    textAlignVertical: 'center',
   },
   footerText: {
     marginTop: 30,
