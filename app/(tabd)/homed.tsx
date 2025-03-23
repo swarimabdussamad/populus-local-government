@@ -197,7 +197,7 @@ const PostModal: React.FC<PostModalProps> = ({
 
 
 
-const Home = () => {
+const HomeDepartment = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [postTypeModalVisible, setPostTypeModalVisible] = useState(false);
   const [postModalVisible, setPostModalVisible] = useState(false);
@@ -403,5 +403,5 @@ const Home = () => {
 
 
 
-export default Home;
+export default HomeDepartment;
   

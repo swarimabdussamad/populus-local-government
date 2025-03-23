@@ -7,7 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 
 // Import your screens
-import Home from "./home";
+import HomeMain from "./home";
 import Weather from "@/app/(tabs)/weatherscreen";
 import Map from "@/app/(tabs)/map";
 import HouseDetails from '@/app/(tabs)/HouseDetails';
@@ -58,7 +58,7 @@ const HomeStackNavigator = () => {
     <HomeStack.Navigator>
       <HomeStack.Screen
         name="HomeScreen"
-        component={Home}
+        component={HomeMain}
         options={{ headerShown: false }} 
       />
       <HomeStack.Screen
