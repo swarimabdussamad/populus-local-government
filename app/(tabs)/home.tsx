@@ -142,14 +142,14 @@ interface DecodedToken {
 const getUserInfoFromToken = async (): Promise<{ username: string; userId: string }> => {
   try {
     const token = await AsyncStorage.getItem('userToken');
-    console.log(token);
+    
     if (!token) {
       console.log('No token found in AsyncStorage');
       return { username: 'Anonymous', userId: '0000' }; // Default values
     }
     
     const decodedToken = jwtDecode(token) as DecodedToken;
-    
+    console.log("Userbane of local government:",decodedToken.username);
     return {
       username: decodedToken.username || 'Anonymous',
       userId: decodedToken.userId || '0000',
