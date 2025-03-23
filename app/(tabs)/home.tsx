@@ -162,7 +162,6 @@ const getUserInfoFromToken = async (): Promise<{ username: string; userId: strin
 };
 
 
-
 interface Post {
   _id: string;
   department: string;
@@ -220,9 +219,7 @@ const DepartmentPicker: React.FC<{
   const [isVisible, setIsVisible] = useState(false);
   const selectedDept = DEPARTMENTS.find((d) => d.name === selectedDepartment);;
 
-  const handlePress = () => {
-    navigation.navigate('Weatherscreen'); // Navigate to screen named "Weather"
-  };
+  
 
   return (
     <>
@@ -392,12 +389,12 @@ const CommentModal: React.FC<{
 const Home = () => {
   
   const navigation = useNavigation();
-
+ 
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
-  const { weatherData } = useContext(WeatherContext);
+  
   const [newPost, setNewPost] = useState({
     department: '',
     title: '',
@@ -489,7 +486,7 @@ const Home = () => {
 
   const handleComment = (postId: string) => {
     console.log("postId:", postId);
-    console.log("Request URL:", `${API_URL}/posts/${postId}/addcomments`);
+    
 
     setSelectedPostId(postId);
     setCommentModalVisible(true);
@@ -498,34 +495,67 @@ const Home = () => {
   const handleAddComment = async (postId: string, message: string) => {
     console.log( "postID" ,postId  );
     console.log("message",message);
+
     const userInfo = await getUserInfoFromToken();
-        const username = userInfo.username;
+    const username = userInfo.username;
+
     try {
       const response = await axios.post(`${API_URL}/posts/${postId}/comments`, {
         username,
         message
       });
-      console.log(response);
-      // Update local state with new comment
-      setPosts(posts.map(post => {
+      console.log(response.data);
+
+          // Update local state with new comment
+    setPosts((prevPosts) =>
+      prevPosts.map((post) => {
         if (post._id === postId) {
           return {
             ...post,
             reactions: {
               ...post.reactions,
-              comments: [...post.reactions.comments, response.data]
-            }
+              comments: [...post.reactions.comments, response.data.comment], // Use the comment from the response
+            },
           };
         }
         return post;
-      }));
-
+      })
+    );
+     // Fetch the latest comments after adding a new comment
+     await fetchComments(postId);
       return response.data;
     } catch (error) {
       console.error('Add comment error:', error);
       throw error;
     }
   };
+
+  const fetchComments = async (postId: string) => {
+    try {
+      const response = await axios.get(`${API_URL}/posts/${postId}/comments`);
+      console.log("Fetched comments:", response.data.comments);
+  
+      // Update local state with fetched comments
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => {
+          if (post._id === postId) {
+            return {
+              ...post,
+              reactions: {
+                ...post.reactions,
+                comments: response.data.comments, // Update with sorted comments
+              },
+            };
+          }
+          return post;
+        })
+      );
+    } catch (error) {
+      console.error('Fetch comments error:', error);
+    }
+  };
+  
+ 
 
   const [image, setImage] = useState<string | null>(null);
 
