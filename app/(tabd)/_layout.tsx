@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Foundation, MaterialCommunityIcons, Feather, Ionicons } from "@expo/vector-icons";
 
 // Import your screens
-import Home from "./homed"
+import HomeDepartment from "./homed"
 import Weather from "@/app/(tabd)/weatherscreen";
 import Map from "@/app/(tabd)/map";
 import HouseDetails from '@/app/(tabd)/HouseDetails'; // Adjust the path if needed
@@ -41,7 +41,7 @@ const HomeStackNavigator = () => {
     <HomeStack.Navigator>
       <HomeStack.Screen
         name="Home"
-        component={Home}
+        component={HomeDepartment}
         options={{ title: "Home" }}
       />
       <HomeStack.Screen
