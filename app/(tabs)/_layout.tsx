@@ -1,5 +1,4 @@
-import React, { useEffect, useCallback, createContext } from 'react';
-import{useState, } from 'react';
+import React, { createContext, useState } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Foundation, MaterialCommunityIcons, Feather, Ionicons } from "@expo/vector-icons";
@@ -25,7 +24,6 @@ const Tab = createBottomTabNavigator();
 const SurveyStack = createNativeStackNavigator();
 const HomeStack = createNativeStackNavigator();
 const MapStack = createNativeStackNavigator();
-const UserStack = createNativeStackNavigator();
 
 // Survey Stack Navigator
 const SurveyStackNavigator = () => {
@@ -66,7 +64,11 @@ const HomeStackNavigator = () => {
         component={Weather}
         options={{ title: "Weather Forecast" }}
       />
-      
+      <HomeStack.Screen
+        name="ImportResident"
+        component={ImportResident}
+        options={{  headerShown: false }}
+      />
     </HomeStack.Navigator>
   );
 };
