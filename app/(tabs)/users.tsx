@@ -153,6 +153,33 @@ const router = useRouter();
   const renderUserCard = ({ item }: { item: User }) => {
     const UserCard = Animated.createAnimatedComponent(TouchableOpacity);
     
+    // Function to extract coordinates from mappedHouse string
+    const extractCoordinates = (mappedHouseStr: string | null | undefined) => {
+      if (!mappedHouseStr) return null;
+      
+      try {
+        // Extract latitude and longitude using regex
+        const latMatch = mappedHouseStr.match(/Latitude:\s*(-?\d+\.?\d*)/i);
+        const lngMatch = mappedHouseStr.match(/Longitude:\s*(-?\d+\.?\d*)/i);
+        
+        if (latMatch && lngMatch) {
+          const latitude = parseFloat(latMatch[1]);
+          const longitude = parseFloat(lngMatch[1]);
+          
+          if (!isNaN(latitude) && !isNaN(longitude)) {
+            return { latitude, longitude };
+          }
+        }
+        return null;
+      } catch (error) {
+        console.error('Error extracting coordinates:', error);
+        return null;
+      }
+    };
+    
+    const coordinates = extractCoordinates(item.mappedHouse);
+    console.log("coordinates:",coordinates);
+    
     return (
       <UserCard style={styles.userCard}>
         <View style={styles.userHeader}>
@@ -174,6 +201,7 @@ const router = useRouter();
             <Text style={styles.userDetail}>Username: {item.username || 'N/A'}</Text>
             <Text style={styles.userDetail}>Email: {item.email || 'N/A'}</Text>
             <Text style={styles.userDetail}>Mobile: {item.mobileNo || 'N/A'}</Text>
+            
           </View>
         </View>
   
@@ -223,10 +251,36 @@ const router = useRouter();
             <Text style={styles.detailLabel}>Is Owner:</Text>
             <Text style={styles.detailValue}>{item.isOwnerHome || 'N/A'}</Text>
           </View>
+          
+          {/* Replace the text output with a map */}
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Mapped House:</Text>
-            <Text style={styles.detailValue}>{item.mappedHouse || 'N/A'}</Text>
+            <Text style={styles.detailLabel}>Location:</Text>
+            {coordinates ? (
+              <View style={styles.mapContainer}>
+                <MapView
+                  style={styles.map}
+                  initialRegion={{
+                    latitude: coordinates.latitude,
+                    longitude: coordinates.longitude,
+                    latitudeDelta: 0.005,
+                    longitudeDelta: 0.005,
+                  }}
+                >
+                  <Marker
+                    coordinate={{
+                      latitude: coordinates.latitude,
+                      longitude: coordinates.longitude,
+                    }}
+                    title={item.name || 'Location'}
+                    description={item.houseDetails || 'House location'}
+                  />
+                </MapView>
+              </View>
+            ) : (
+              <Text style={styles.detailValue}>No location data available</Text>
+            )}
           </View>
+          
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Ward Number:</Text>
             <Text style={styles.detailValue}>{item.wardNumber || 'N/A'}</Text>
@@ -562,9 +616,7 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 4,
   },
-  map: {
-    flex: 1,
-  },
+  
   mapFooter: {
     padding: 16,
     borderTopWidth: 1,
@@ -573,6 +625,17 @@ const styles = StyleSheet.create({
   coordinatesText: {
     fontSize: 14,
     textAlign: 'center',
+  },
+  mapContainer: {
+    width: '65%',
+    height: 150,
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginTop: 5,
+  },
+  map: {
+    width: '100%',
+    height: '100%',
   },
 });
 

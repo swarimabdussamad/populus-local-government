@@ -24,6 +24,7 @@ const Tab = createBottomTabNavigator();
 const SurveyStack = createNativeStackNavigator();
 const HomeStack = createNativeStackNavigator();
 const MapStack = createNativeStackNavigator();
+const UserStack = createNativeStackNavigator();
 
 // Survey Stack Navigator
 const SurveyStackNavigator = () => {
