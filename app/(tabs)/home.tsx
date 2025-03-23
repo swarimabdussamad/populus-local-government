@@ -22,6 +22,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { API_URL } from '@/constants/constants';
+import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
+import { WeatherContext } from './_layout'; // Adjust path to match your file structure
 import styles from "./Styles/homestyle";
 import { launchImageLibrary, ImageLibraryOptions, MediaType, ImagePickerResponse } from 'react-native-image-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -159,8 +161,6 @@ const getUserInfoFromToken = async (): Promise<{ username: string; userId: strin
   }
 };
 
-import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
-import { WeatherContext } from './_layout'; // Adjust path to match your file structure
 
 interface Post {
   _id: string;
@@ -220,7 +220,7 @@ const DepartmentPicker: React.FC<{
   const selectedDept = DEPARTMENTS.find((d) => d.name === selectedDepartment);;
 
   const handlePress = () => {
-    useNavigation.navigate('Weatherscreen'); // Navigate to screen named "Weather"
+    // Navigate to screen named "Weather"
   };
 
   return (
@@ -284,47 +284,6 @@ const DepartmentPicker: React.FC<{
 };
 
 
-const WeatherWidget = () => {
-  return (
-    <View style={styles.weatherWidget}>
-      <View style={styles.weatherHeader}>
-        <View style={styles.locationContainer}>
-          <Feather name="map-pin" size={14} color={COLORS.primary} />
-          <Text style={styles.locationText}>San Francisco, CA</Text>
-        </View>
-        <Text style={styles.dateText}>February 27, 2025</Text>
-      </View>
-      
-      <View style={styles.weatherContent}>
-        <View style={styles.mainWeatherInfo}>
-          <View style={styles.temperatureContainer}>
-            <Text style={styles.temperature}>28°</Text>
-            <View style={styles.highLowContainer}>
-              <View style={styles.highLowItem}>
-                <Feather name="arrow-up" size={12} color={COLORS.textLight} />
-                <Text style={styles.highLowText}>32°</Text>
-              </View>
-              <View style={styles.highLowItem}>
-                <Feather name="arrow-down" size={12} color={COLORS.textLight} />
-                <Text style={styles.highLowText}>24°</Text>
-              </View>
-            </View>
-          </View>
-          
-          <View style={styles.conditionContainer}>
-            <View style={styles.weatherIconContainer}>
-              <Feather name="sun" size={32} color={COLORS.primary} />
-            </View>
-            <Text style={styles.weatherCondition}>Sunny</Text>
-            <Text style={styles.feelsLikeText}>Feels like 30°</Text>
-          </View>
-        </View>
-        
-      
-      </View>
-    </View>
-  );
-};
 
 // Comment Modal Component
 const CommentModal: React.FC<{
@@ -432,12 +391,12 @@ const CommentModal: React.FC<{
 const Home = () => {
   
   const navigation = useNavigation();
-
+ 
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
-  const { weatherData } = useContext(WeatherContext);
+  
   const [newPost, setNewPost] = useState({
     department: '',
     title: '',
@@ -919,8 +878,9 @@ const Home = () => {
 
   const renderHeader = () => (
     <View>
-    <Header />
-      <WeatherWidget />
+
+      <WeatherCard/>
+
     </View>
   );
   return (
