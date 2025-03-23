@@ -12,6 +12,7 @@ import {
   Platform,
   StatusBar,
   SafeAreaView,
+  Modal,
 } from 'react-native';
 import { API_URL } from '@/constants/constants';
 import { useFocusEffect } from '@react-navigation/native';
@@ -19,7 +20,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-
+import MapView, { Marker } from 'react-native-maps';
 interface User {
   _id: string;
   name: string;
@@ -164,16 +165,86 @@ const router = useRouter();
               />
             ) : (
               <Text style={styles.avatarText}>
-                {item.name.charAt(0).toUpperCase()}
+                {item.name ? item.name.charAt(0).toUpperCase() : '?'}
               </Text>
             )}
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{item.name}</Text>
-            <Text style={styles.userDetail}>DOB: {item.dateOfBirth}</Text>
-            <Text style={styles.userDetail}>Gender: {item.gender}</Text>
+            <Text style={styles.userName}>{item.name || 'No Name'}</Text>
+            <Text style={styles.userDetail}>Username: {item.username || 'N/A'}</Text>
+            <Text style={styles.userDetail}>Email: {item.email || 'N/A'}</Text>
+            <Text style={styles.userDetail}>Mobile: {item.mobileNo || 'N/A'}</Text>
           </View>
         </View>
+  
+        <View style={styles.detailSection}>
+          <Text style={styles.sectionTitle}>Personal Information</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Date of Birth:</Text>
+            <Text style={styles.detailValue}>{item.dateOfBirth || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Gender:</Text>
+            <Text style={styles.detailValue}>{item.gender || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Occupation:</Text>
+            <Text style={styles.detailValue}>{item.occupation || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Income:</Text>
+            <Text style={styles.detailValue}>{item.income || 'N/A'}</Text>
+          </View>
+        </View>
+  
+        <View style={styles.detailSection}>
+          <Text style={styles.sectionTitle}>Identification</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Aadhaar No:</Text>
+            <Text style={styles.detailValue}>{item.aadhaarNo || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Ration ID:</Text>
+            <Text style={styles.detailValue}>{item.rationId || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Ration Card Type:</Text>
+            <Text style={styles.detailValue}>{item.rationcardType || 'N/A'}</Text>
+          </View>
+        </View>
+  
+        <View style={styles.detailSection}>
+          <Text style={styles.sectionTitle}>Address Information</Text>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>House Details:</Text>
+            <Text style={styles.detailValue}>{item.houseDetails || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Is Owner:</Text>
+            <Text style={styles.detailValue}>{item.isOwnerHome || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Mapped House:</Text>
+            <Text style={styles.detailValue}>{item.mappedHouse || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Ward Number:</Text>
+            <Text style={styles.detailValue}>{item.wardNumber || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Local Body:</Text>
+            <Text style={styles.detailValue}>{item.localBody || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Self Gov Type:</Text>
+            <Text style={styles.detailValue}>{item.selfGovType || 'N/A'}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>District:</Text>
+            <Text style={styles.detailValue}>{item.district || 'N/A'}</Text>
+          </View>
+        </View>
+  
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={[styles.button, styles.verifyButton]}
@@ -435,6 +506,73 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
+  },
+  detailSection: {
+    marginVertical: 8,
+    paddingHorizontal: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#555',
+    width: '40%',
+  },
+  detailValue: {
+    fontSize: 14,
+    color: '#333',
+    flex: 1,
+  },
+ 
+  mapLink: {
+    flex: 1,
+  },
+  mapLinkText: {
+    color: '#0066cc',
+    textDecorationLine: 'underline',
+  },
+  mapIcon: {
+    marginLeft: 4,
+  },
+  modalContainer: {
+    flex: 1,
+  },
+  mapHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  mapTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  map: {
+    flex: 1,
+  },
+  mapFooter: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#ccc',
+  },
+  coordinatesText: {
+    fontSize: 14,
+    textAlign: 'center',
   },
 });
 

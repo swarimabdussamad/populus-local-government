@@ -22,8 +22,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { API_URL } from '@/constants/constants';
-import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
-import { WeatherContext } from './_layout'; // Adjust path to match your file structure
 import styles from "./Styles/homestyle";
 import { launchImageLibrary, ImageLibraryOptions, MediaType, ImagePickerResponse } from 'react-native-image-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -31,8 +29,10 @@ import { Linking } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
+import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
+import { WeatherContext } from './_layout'; // Adjust path to match your file structure
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { jwtDecode } from 'jwt-decode';
+
 
 
 const COLORS = {
@@ -142,7 +142,7 @@ interface DecodedToken {
 const getUserInfoFromToken = async (): Promise<{ username: string; userId: string }> => {
   try {
     const token = await AsyncStorage.getItem('userToken');
-    console.log(token);
+    
     if (!token) {
       console.log('No token found in AsyncStorage');
       return { username: 'Anonymous', userId: '0000' }; // Default values
@@ -161,8 +161,7 @@ const getUserInfoFromToken = async (): Promise<{ username: string; userId: strin
   }
 };
 
-import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
-import { WeatherContext } from './_layout'; // Adjust path to match your file structure
+
 
 interface Post {
   _id: string;
@@ -222,7 +221,7 @@ const DepartmentPicker: React.FC<{
   const selectedDept = DEPARTMENTS.find((d) => d.name === selectedDepartment);;
 
   const handlePress = () => {
-    useNavigation.navigate('Weatherscreen'); // Navigate to screen named "Weather"
+    navigation.navigate('Weatherscreen'); // Navigate to screen named "Weather"
   };
 
   return (
@@ -393,7 +392,7 @@ const CommentModal: React.FC<{
 const Home = () => {
   
   const navigation = useNavigation();
-  const { weatherData } = useContext(WeatherContext);
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -657,8 +656,7 @@ const Home = () => {
         };
 
         console.log("Before Submitting post:", postData); // Debugging
-        const userInfo = await getUserInfoFromToken();
-        const userId = userInfo.userId;
+
         const response = await axios.post(`${API_URL}/posts/create`, postData, {
               headers: {
                   'Authorization': `Bearer ${token}` // Include the token in the Authorization header
@@ -846,10 +844,8 @@ const Home = () => {
   };
 
   const renderHeader = () => (
-    <View>
-
+    <View style={styles.section}>
       <WeatherCard/>
-
     </View>
   );
   return (
@@ -967,7 +963,7 @@ const Home = () => {
 
 
 
-            <TouchableOpacity
+      <TouchableOpacity
               style={styles.submitButton}
               onPress={submitPost}
             >
@@ -1011,5 +1007,7 @@ const headerStyles = StyleSheet.create({
     padding: 8, // Increased touchable area
   },
 });
-
+function jwtDecode(token: string): DecodedToken {
+  throw new Error('Function not implemented.');
+}
 
