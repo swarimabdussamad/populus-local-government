@@ -24,6 +24,7 @@ const Profile = () => {
   const fetchProfileData = async () => {
     try {
       const username = await AsyncStorage.getItem('currentUsername');
+      console.log(username);
       const response = await fetch(`${API_URL}/government/profile/${username}`);
       
       if (!response.ok) {
@@ -32,7 +33,7 @@ const Profile = () => {
 
       const data = await response.json();
       setProfileData(data);
-      console.log(data)
+      console.log(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
       Alert.alert('Error', 'Failed to load profile data');
@@ -61,7 +62,6 @@ const Profile = () => {
             try {
               await AsyncStorage.removeItem('userToken');
               await AsyncStorage.removeItem('currentUsername');
-            
               router.replace('/login');
             } catch (error) {
               console.error('Logout error:', error);
@@ -94,16 +94,16 @@ const Profile = () => {
           <View style={styles.profileOverview}>
             <View style={styles.avatarContainer}>
               {profileData.photo ? (
-                <Image source={{ uri: profileData.photo || 'file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252Fpopulus-63da366b-c99f-403c-b6e5-b7a0a4e9ddad/ImagePicker/d0824b5d-0aa4-428d-812c-2fc5f6403d14.jpeg' }} style={styles.avatar} />
+                <Image source={{ uri: profileData.photo }} style={styles.avatar} />
               ) : (
                 <View style={styles.avatarPlaceholder}>
                   <Text style={styles.avatarText}>
-                    {profileData.name?.charAt(0).toUpperCase()}
+                    {profileData.fullName?.charAt(0).toUpperCase()}
                   </Text>
                 </View>
               )}
             </View>
-            <Text style={styles.profileName}>{profileData.name}</Text>
+            <Text style={styles.profileName}>{profileData.fullName}</Text>
             <Text style={styles.profileRole}>{profileData.selfGovType || 'Local Government'}</Text>
           </View>
 
@@ -134,7 +134,7 @@ const Profile = () => {
               </View>
               <View style={styles.sectionContent}>
                 <Text style={styles.sectionTitle}>Phone</Text>
-                <Text style={styles.sectionSubtitle}>{profileData.mobileNo}</Text>
+                <Text style={styles.sectionSubtitle}>{profileData.mobile}</Text>
               </View>
             </View>
 
@@ -163,7 +163,6 @@ const Profile = () => {
     </SafeAreaView>
   );
 };
-
 
 const styles = StyleSheet.create({
   loadingContainer: {

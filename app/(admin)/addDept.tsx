@@ -17,17 +17,20 @@ import MultiSelect from "react-native-multiple-select";
 
 // List of predefined departments with full names
 const DEPARTMENTS = [
-  "Health Department",
-  "Police Department",
-  "Education Department",
-  "Transport Department",
-  "Finance Department",
-  "Agriculture Department",
-  "Water Resources Department",
-  "Electricity Department",
-  "Waste Management Department",
-  "Urban Development Department",
-];
+    "Health Department",
+    "Police Department",
+    "Fire Department",
+    "Education Department",
+    "Transportation Department",
+    "Environmental Department",
+    "Social Services",
+    "Finance Department",
+    "Agriculture Department",
+    "Water Resources Department",
+    "Electricity Department",
+    "Waste Management Department",
+    "Urban Development Department",
+  ];
 
 const SELF_GOVERNMENT_TYPES = ["Panchayath", "Municipality"];
 const PALAKKAD_LOCAL_BODIES = {
@@ -44,13 +47,15 @@ const PALAKKAD_LOCAL_BODIES = {
     "PATTAMBI",
   ],
 };
-
+const DISTRICTS = ["PALAKKAD", "MALAPPURAM"];
+// Define the shape of the form data
 interface FormData {
   departmentName: string;
   username: string;
   accessAreas: string[];
   email: string;
   phone: string;
+  district: string;
 }
 
 interface Errors {
@@ -59,6 +64,7 @@ interface Errors {
   accessAreas?: string;
   email?: string;
   phone?: string;
+  district?:string;
 }
 
 const addDept = () => {
@@ -69,6 +75,7 @@ const addDept = () => {
     accessAreas: [],
     email: "",
     phone: "",
+    district:"",
   });
   const [errors, setErrors] = useState<Errors>({});
 
@@ -92,7 +99,7 @@ const addDept = () => {
     if (formData.phone && formData.phone.length !== 10) {
       newErrors.phone = "Phone number must be 10 digits";
     }
-
+    if (!formData.district) newErrors.district = "District is required"; 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       Alert.alert("Validation Error", "Please fill in all required fields correctly");
@@ -137,11 +144,14 @@ const addDept = () => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <View style={styles.scrollContainer}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Create Department Account</Text>
           <Text style={styles.subtitle}>Please fill in the department details</Text>
         </View>
+  
+        {/* Form Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Department Details</Text>
   
@@ -173,6 +183,20 @@ const addDept = () => {
             {errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
           </View>
   
+          {/* District Dropdown */}
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={formData.district}
+              onValueChange={(value) => handleInputChange("district", value)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Select District" value="" />
+              {DISTRICTS.map((district) => (
+                <Picker.Item label={district} value={district} key={district} />
+              ))}
+            </Picker>
+          </View>
+  
           {/* Access Areas (Multi-select) */}
           <View style={styles.inputContainer}>
             <MultiSelect
@@ -194,6 +218,7 @@ const addDept = () => {
               displayKey="name"
               submitButtonColor="#1e3a8a"
               submitButtonText="Select"
+              styleMainWrapper={{ height: 150 }} // Limit height
             />
             {errors.accessAreas && <Text style={styles.errorText}>{errors.accessAreas}</Text>}
           </View>
@@ -227,21 +252,21 @@ const addDept = () => {
           </View>
         </View>
   
-        {/* Submit Button */}
+        {/* Submit Button (inside ScrollView but with extra padding at bottom) */}
         <TouchableOpacity
           style={[styles.navButton, styles.submitButton]}
           onPress={handleSignUp}
         >
           <Text style={styles.navButtonText}>Create Department Account</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8fafc" },
-  scrollContainer: { flexGrow: 1, padding: 20 },
+  scrollContainer: { flexGrow: 1, padding: 40 },
   header: { alignItems: "center", marginBottom: 30 },
   title: { fontSize: 25, fontWeight: "bold", color: "#1e3a8a", marginBottom: 8 },
   subtitle: { fontSize: 16, color: "#64748b" },
@@ -294,6 +319,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 20,
   },
+ 
 });
 
 export default addDept;

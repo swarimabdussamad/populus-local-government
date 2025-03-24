@@ -32,7 +32,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
 import { WeatherContext } from './_layout'; // Adjust path to match your file structure
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import { jwtDecode } from 'jwt-decode';
 
 
 const COLORS = {
@@ -64,55 +64,6 @@ const DEPARTMENTS: Department[] = [
     color: '#3498DB',
     icon: 'account-balance',  // ✅ MaterialIcons
     iconFamily: 'MaterialIcons'
-  },
-  { 
-    id: 2, 
-    name: 'Health Department', 
-    color: '#2ECC71',
-    icon: 'local-hospital',  // ✅ MaterialIcons
-    iconFamily: 'MaterialIcons'
-  },
-  { 
-    id: 3, 
-    name: 'Police Department', 
-    color: '#34495E',
-    icon: 'police-badge',  // ✅ MaterialCommunityIcons
-    iconFamily: 'MaterialCommunityIcons'
-  },
-  { 
-    id: 4, 
-    name: 'Fire Department', 
-    color: '#E74C3C',
-    icon: 'fire-truck',  // ✅ MaterialCommunityIcons
-    iconFamily: 'MaterialCommunityIcons'
-  },
-  { 
-    id: 5, 
-    name: 'Education Department', 
-    color: '#9B59B6',
-    icon: 'school',  // ✅ MaterialIcons
-    iconFamily: 'MaterialIcons'
-  },
-  { 
-    id: 6, 
-    name: 'Transportation Department', 
-    color: '#F1C40F',
-    icon: 'bus',  // ✅ MaterialCommunityIcons
-    iconFamily: 'MaterialCommunityIcons'
-  },
-  { 
-    id:7, 
-    name: 'Environmental Department', 
-    color: '#16A085',
-    icon: 'leaf',  // ✅ MaterialCommunityIcons
-    iconFamily: 'MaterialCommunityIcons'
-  },
-  { 
-    id: 8, 
-    name: 'Social Services', 
-    color: '#E67E22',
-    icon: 'account-group',  // ✅ MaterialCommunityIcons
-    iconFamily: 'MaterialCommunityIcons'
   },
 ];
 
@@ -761,105 +712,105 @@ const Home = () => {
           );
         }
       };
-    
-    return (
-      <View style={styles.postContainer}>
-        <View style={styles.postHeader}>
-          <View style={styles.headerContent}>
-          {department && (
-          <View style={styles.departmentInfo}>
-            <DepartmentIcon 
-              department={department} 
-              size={29} 
-            />
-            <Text style={styles.departmentText}>
-              {department.name}
+      return (
+        <View style={styles.postContainer}>
+          <View style={styles.postHeader}>
+            <View style={styles.headerContent}>
+            {department && (
+            <View style={styles.departmentInfo}>
+              <DepartmentIcon 
+                department={department} 
+                size={29} 
+              />
+              <Text style={styles.departmentText}>
+                {department.name}
+              </Text>
+              </View>
+              )}
+            
+            <Text style={styles.postDate}>
+              {new Date(item.createdAt).toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
             </Text>
-            </View>
-            )}
+          </View>
           
-          <Text style={styles.postDate}>
-            {new Date(item.createdAt).toLocaleDateString(undefined, {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
-          </Text>
-        </View>
-        
-         {/* Add Delete Icon */}
-         <TouchableOpacity
-          onPress={() => handleDeletePost(item._id)}
-          style={styles.deleteButton}
-        >
-          <Icon name="trash-outline" size={20} color={COLORS.error} />
-        </TouchableOpacity>
-      </View>
-
-        <Text style={styles.postTitle}>{item.title}</Text>
-        {item.imageUri && (
-          <Image
-            source={{ uri: item.imageUri }}
-            style={styles.postImage}
-            resizeMode="cover"
-          />
-         )}
-        <Text style={styles.postContent}>{item.message}</Text>
-        
-        <View style={styles.postActions}>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => handleReaction(item._id,'like')}
+           {/* Add Delete Icon */}
+           <TouchableOpacity
+            onPress={() => handleDeletePost(item._id)}
+            style={styles.deleteButton}
           >
-             <Icon 
-            name={item.userReaction === 'like' ? "thumbs-up" : "thumbs-up-outline"} 
-            size={18} 
-            color={item.userReaction === 'like' ? COLORS.secondary : COLORS.subtext} 
-          />
-            <Text style={styles.actionText}>{item.reactions.likes}</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => handleReaction(item._id,'dislike')}
-          >
-            <Icon 
-            name={item.userReaction === 'dislike' ? "thumbs-down" : "thumbs-down-outline"} 
-            size={18} 
-            color={item.userReaction === 'dislike' ? COLORS.error : COLORS.subtext} 
-          />
-            <Text style={styles.actionText}>{item.reactions.dislikes }</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => handleComment(item._id)}
-          >
-            <Icon name="chatbubble-outline" size={18} color={COLORS.subtext} />
-            <Text style={styles.actionText}>{item.reactions.comments.length}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => shareToWhatsApp(item)}
-          >
-            <Icon name="logo-whatsapp" size={20} color="#25D366" />
-            <Text style={styles.actionText}>WhatsApp</Text>
+            <Icon name="trash-outline" size={20} color={COLORS.error} />
           </TouchableOpacity>
         </View>
-        {selectedPostId === item._id && (
-          <CommentModal
-            visible={commentModalVisible}
-            onClose={() => setCommentModalVisible(false)}
-            postId={item._id}
-            comments={item.reactions.comments}
-            onAddComment={(message) => handleAddComment(item._id, message)}
-          />
-        )}
-      </View>
-    );
+  
+          <Text style={styles.postTitle}>{item.title}</Text>
+          {item.imageUri && (
+            <Image
+              source={{ uri: item.imageUri }}
+              style={styles.postImage}
+              resizeMode="cover"
+            />
+           )}
+          <Text style={styles.postContent}>{item.message}</Text>
+          
+          <View style={styles.postActions}>
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => handleReaction(item._id,'like')}
+            >
+               <Icon 
+              name={item.userReaction === 'like' ? "thumbs-up" : "thumbs-up-outline"} 
+              size={18} 
+              color={item.userReaction === 'like' ? COLORS.secondary : COLORS.subtext} 
+            />
+              <Text style={styles.actionText}>{item.reactions.likes}</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => handleReaction(item._id,'dislike')}
+            >
+              <Icon 
+              name={item.userReaction === 'dislike' ? "thumbs-down" : "thumbs-down-outline"} 
+              size={18} 
+              color={item.userReaction === 'dislike' ? COLORS.error : COLORS.subtext} 
+            />
+              <Text style={styles.actionText}>{item.reactions.dislikes }</Text>
+            </TouchableOpacity>
+  
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => handleComment(item._id)}
+            >
+              <Icon name="chatbubble-outline" size={18} color={COLORS.subtext} />
+              <Text style={styles.actionText}>{item.reactions.comments.length}</Text>
+            </TouchableOpacity>
+  
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => shareToWhatsApp(item)}
+            >
+              <Icon name="logo-whatsapp" size={20} color="#25D366" />
+              <Text style={styles.actionText}>WhatsApp</Text>
+            </TouchableOpacity>
+          </View>
+          {selectedPostId === item._id && (
+            <CommentModal
+              visible={commentModalVisible}
+              onClose={() => setCommentModalVisible(false)}
+              postId={item._id}
+              comments={item.reactions.comments}
+              onAddComment={(message) => handleAddComment(item._id, message)}
+            />
+          )}
+        </View>
+      );
+      
   };
 
   const Header = () => {
@@ -874,7 +825,8 @@ const Home = () => {
   };
 
   const renderHeader = () => (
-    <View style={styles.section}>
+    <View >
+      <Header/>
       <WeatherCard/>
     </View>
   );
@@ -882,7 +834,6 @@ const Home = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
 
-      
 
       {isLoading ? (
         <ActivityIndicator size="large" color={COLORS.secondary} style={styles.loader} />
@@ -1037,7 +988,5 @@ const headerStyles = StyleSheet.create({
     padding: 8, // Increased touchable area
   },
 });
-function jwtDecode(token: string): DecodedToken {
-  throw new Error('Function not implemented.');
-}
+
 

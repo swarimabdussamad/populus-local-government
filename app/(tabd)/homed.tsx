@@ -23,7 +23,6 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { API_URL } from '@/constants/constants';
 import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
-import { WeatherContext } from '@/app/_layout'; // Adjust path to match your file structure
 import styles from "@/app/(tabs)/Styles/homestyle";
 import { launchImageLibrary, ImageLibraryOptions, MediaType, ImagePickerResponse } from 'react-native-image-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -127,33 +126,37 @@ interface Comment {
 }
 
 interface DecodedToken {
+  role: any;
   username: string;
+  access:string,
   userId: string;
   exp: number;
   // Add any other properties that might be in your token
 }
 
-const getUserInfoFromToken = async (): Promise<{ username: string; userId: string }> => {
+const getUserInfoFromToken = async (): Promise<{ username: string; userId: string,access: string }> => {
   try {
     const token = await AsyncStorage.getItem('userToken');
-    
+    console.log(token);
     if (!token) {
       console.log('No token found in AsyncStorage');
-      return { username: 'Anonymous', userId: '0000' }; // Default values
+      return { username: 'Anonymous', userId: '0000' ,access:'Null'}; // Default values
     }
     
     const decodedToken = jwtDecode(token) as DecodedToken;
-    console.log("username of the other department:",decodedToken.username);
+    console.log("username of the other department:",decodedToken.role);
     console.log("expiry time of the other department:",decodedToken.exp);
+    console.log("access of the other department:",decodedToken.access);
     return {
-      username: decodedToken.username || 'Anonymous',
+      username: decodedToken.role || 'Anonymous',
       userId: decodedToken.userId || '0000',
+      access: decodedToken.access || 'Anonymous',
        // Assuming presidentId is the access value
        
     };
   } catch (error) {
-    console.error('Error getting user information from token:', error);
-    return { username: 'Anonymous', userId: '0000' }; // Default values on error
+    console.error('Error getting user information from tok;en:', error);
+    return { username: 'Anonymous', userId: '0000' ,access: 'Null'}; // Default values on error
   }
 };
 
@@ -215,9 +218,6 @@ const DepartmentPicker: React.FC<{
   const [isVisible, setIsVisible] = useState(false);
   const selectedDept = DEPARTMENTS.find((d) => d.name === selectedDepartment);;
 
-  const handlePress = () => {
-    // Navigate to screen named "Weather"
-  };
 
   return (
     <>
@@ -392,6 +392,7 @@ const HomeDepartment = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
+  const [userDepartment, setUserDepartment] = useState<string | null>(null); 
   
   const [newPost, setNewPost] = useState({
     department: '',
@@ -402,22 +403,43 @@ const HomeDepartment = () => {
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
-  // Fetch posts from the backend
   useEffect(() => {
-    fetchPosts();
+    const fetchUserAndSetDepartment = async () => {
+      const userInfo = await getUserInfoFromToken();
+      const username = userInfo.username;
+
+      // Find the department that matches the username
+      const matchedDepartment = DEPARTMENTS.find(
+        (dept) => dept.name.toLowerCase() === username.toLowerCase()
+      );
+
+      if (matchedDepartment) {
+        setUserDepartment(matchedDepartment.name); // Store matched department
+        setNewPost((prev) => ({
+          ...prev,
+          department: matchedDepartment.name, // Auto-fill newPost.department
+        }));
+      }
+
+      // Fetch posts after setting the default department
+      fetchPosts();
+    };
+
+    fetchUserAndSetDepartment();
   }, []);
 
   const fetchPosts = async () => {
     setIsLoading(true);
     try {
       const userInfo = await getUserInfoFromToken();
-        const access = userInfo.username;
+        const access = userInfo.access;
         const response = await axios.get(`${API_URL}/posts/display`, {
           params: {
               access: access // Pass the access value from the token
           }
+        
       });
-      console.log("display");
+      console.log("display",response.data);
       console.log("DEPARTMENTS Data:", DEPARTMENTS.map((d) => d.id));
 
       const transformedPosts = response.data.announcements.map((post : any ) => ({
@@ -437,6 +459,7 @@ const HomeDepartment = () => {
         hasDisliked: false
       }));
       setPosts(transformedPosts);
+    
     } catch (error) {
       Alert.alert(
         'Error',
@@ -650,10 +673,7 @@ const HomeDepartment = () => {
   };
 
   const validatePost = () => {
-    if (!newPost.department) {
-      Alert.alert('Required Field', 'Please select a department.');
-      return false;
-    }
+
     if (!newPost.title.trim()) {
       Alert.alert('Required Field', 'Please enter a title.');
       return false;
@@ -675,18 +695,20 @@ const HomeDepartment = () => {
           return;
         }
       try {
+        const userInfo = await getUserInfoFromToken();
+        const access = userInfo.access;
+        console.log(access);
          const postData = {
           department: newPost.department,
           title: newPost.title.trim(),
           message: newPost.message.trim(),
           imageUri: newPost.imageUri,
-          
+          access: access,
         };
 
         console.log("Before Submitting post:", postData); // Debugging
-        const userInfo = await getUserInfoFromToken();
-        const userId = userInfo.userId;
-        const response = await axios.post(`${API_URL}/posts/create`, postData, {
+        
+        const response = await axios.post(`${API_URL}/department/post_create`, postData, {
               headers: {
                   'Authorization': `Bearer ${token}` // Include the token in the Authorization header
               }
@@ -874,7 +896,7 @@ const HomeDepartment = () => {
 
   const renderHeader = () => (
     <View>
-
+      <Header/>
       <WeatherCard/>
 
     </View>
@@ -935,12 +957,27 @@ const HomeDepartment = () => {
               </TouchableOpacity>
             </View>
 
-            <DepartmentPicker
-              selectedDepartment={newPost.department}
-              onSelect={(departmentId) =>
-                setNewPost((prev) => ({ ...prev, department: departmentId }))
-              }
-            />
+            
+            {userDepartment ? (
+              // Show locked department (non-editable)
+              <View style={headerStyles.lockedDepartment}>
+                <DepartmentIcon 
+                  department={DEPARTMENTS.find(d => d.name === userDepartment)!} 
+                  size={20} 
+                />
+                <Text style={headerStyles.lockedDepartmentText}>
+                  {userDepartment}
+                </Text>
+                <Icon name="lock-closed" size={16} color={COLORS.subtext} />
+              </View>
+            ) : (
+              // Show picker only if no department is auto-assigned
+              <DepartmentPicker
+                selectedDepartment={newPost.department}
+                onSelect={(department) => setNewPost(prev => ({ ...prev, department }))}
+              />
+            )}
+
 
             <TextInput
               style={styles.input}
@@ -1036,6 +1073,20 @@ const headerStyles = StyleSheet.create({
   },
   alertButton: {
     padding: 8, // Increased touchable area
+  },
+  lockedDepartment: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  lockedDepartmentText: {
+    fontSize: 16,
+    color: COLORS.text,
+    fontWeight: '500',
   },
 });
 

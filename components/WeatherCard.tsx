@@ -65,7 +65,7 @@ const WeatherCard = () => {
   // Add a fallback in case context is undefined
   const { weatherData, setWeatherData } = weatherContext || {};
 
-  // Utility function to check for weather alerts - defined before it's used
+  // Utility function to check for weather alerts
   const checkAndShowAlerts = (data: WeatherData) => {
     const alerts = [];
     const { temperature, humidity, windspeed, uvIndex } = data;
@@ -158,7 +158,7 @@ const WeatherCard = () => {
       // Update context with new weather data
       setWeatherData(processedData);
       
-      // Check for weather alerts - explicitly reference the function from this scope
+      // Check for weather alerts
       checkAndShowAlerts(processedData);
       
     } catch (error) {
@@ -198,7 +198,7 @@ const WeatherCard = () => {
     <TouchableOpacity style={styles.card} onPress={handlePress}>
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color="#fff" />
+          <ActivityIndicator size="small" color="#2C3E50" />
           <Text style={styles.loadingText}>Loading weather data...</Text>
         </View>
       ) : error ? (
@@ -217,7 +217,7 @@ const WeatherCard = () => {
               <MaterialCommunityIcons 
                 name={getWeatherIcon(weatherData.weatherCode)}
                 size={38} 
-                color="#FFF" 
+                color="#2C3E50" 
               />
               <Text style={styles.weatherCondition}>
                 {WEATHER_CODES[weatherData.weatherCode]?.description || 'Unknown'}
@@ -225,27 +225,43 @@ const WeatherCard = () => {
             </View>
           </View>
           
+          <View style={styles.divider} />
+          
           <View style={styles.detailsRow}>
             <View style={styles.detailItem}>
-              <MaterialCommunityIcons name="water-percent" size={16} color="#CCC" />
+              <MaterialCommunityIcons name="water-percent" size={16} color="#546E7A" />
               <Text style={styles.detailText}>{Math.round(weatherData.humidity)}%</Text>
             </View>
             
             <View style={styles.detailItem}>
-              <MaterialCommunityIcons name="weather-windy" size={16} color="#CCC" />
+              <MaterialCommunityIcons name="weather-windy" size={16} color="#546E7A" />
               <Text style={styles.detailText}>{Math.round(weatherData.windspeed)} km/h</Text>
             </View>
             
             <View style={styles.detailItem}>
-              <MaterialCommunityIcons name="weather-rainy" size={16} color="#CCC" />
+              <MaterialCommunityIcons name="weather-rainy" size={16} color="#546E7A" />
               <Text style={styles.detailText}>{Math.round(weatherData.rainProbability)}%</Text>
             </View>
           </View>
           
           {weatherData.uvIndex > THRESHOLDS.uv_index.moderate && (
-            <View style={styles.alertBanner}>
-              <MaterialCommunityIcons name="alert" size={14} color="#FFF" />
-              <Text style={styles.alertText}>
+            <View style={[
+              styles.alertBanner, 
+              weatherData.uvIndex > THRESHOLDS.uv_index.high 
+                ? styles.highAlert 
+                : styles.moderateAlert
+            ]}>
+              <MaterialCommunityIcons 
+                name="alert-circle-outline" 
+                size={14} 
+                color={weatherData.uvIndex > THRESHOLDS.uv_index.high ? "#D32F2F" : "#F57C00"} 
+              />
+              <Text style={[
+                styles.alertText,
+                weatherData.uvIndex > THRESHOLDS.uv_index.high 
+                  ? styles.highAlertText 
+                  : styles.moderateAlertText
+              ]}>
                 {weatherData.uvIndex > THRESHOLDS.uv_index.high ? 'High' : 'Moderate'} UV Index
               </Text>
             </View>
@@ -259,38 +275,50 @@ const WeatherCard = () => {
 };
 
 const styles = StyleSheet.create({
-  // Styles remain unchanged
   card: {
-    backgroundColor: '#222233',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     overflow: 'hidden',
-    marginVertical: 10,
+    marginVertical: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F1F1F1',
   },
   loadingContainer: {
-    padding: 20,
+    padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FAFAFA',
   },
   loadingText: {
-    color: '#CCC',
-    marginTop: 8,
+    color: '#546E7A',
+    marginTop: 10,
+    fontWeight: '500',
+    fontSize: 14,
   },
   errorContainer: {
-    padding: 20,
+    padding: 24,
     alignItems: 'center',
+    backgroundColor: '#FFF5F5',
   },
   errorText: {
-    color: '#FF6B6B',
+    color: '#D32F2F',
     textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '500',
   },
   cardContent: {
-    padding: 16,
+    padding: 20,
   },
   mainInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   leftSection: {
     flex: 1,
@@ -299,54 +327,75 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   temperature: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontSize: 42,
+    fontWeight: '700',
+    color: '#2C3E50',
+    letterSpacing: -1,
   },
   location: {
     fontSize: 14,
-    color: '#DDD',
+    color: '#546E7A',
     marginTop: 4,
+    fontWeight: '500',
   },
   weatherCondition: {
     fontSize: 14,
-    color: '#DDD',
-    marginTop: 4,
+    color: '#546E7A',
+    marginTop: 6,
+    fontWeight: '500',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#EEEEEE',
+    marginVertical: 16,
   },
   detailsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
-    paddingTop: 12,
+    paddingVertical: 4,
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   detailText: {
-    color: '#DDD',
+    color: '#2C3E50',
     fontSize: 14,
+    fontWeight: '500',
   },
   alertBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 107, 107, 0.3)',
-    padding: 8,
-    borderRadius: 6,
-    marginTop: 12,
-    gap: 6,
+    borderRadius: 8,
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    gap: 8,
     justifyContent: 'center',
   },
+  moderateAlert: {
+    backgroundColor: 'rgba(255, 152, 0, 0.1)',
+  },
+  highAlert: {
+    backgroundColor: 'rgba(211, 47, 47, 0.1)',
+  },
   alertText: {
-    color: '#FFF',
     fontSize: 13,
+    fontWeight: '600',
+  },
+  moderateAlertText: {
+    color: '#F57C00',
+  },
+  highAlertText: {
+    color: '#D32F2F',
   },
   fallbackText: {
-    padding: 20,
+    padding: 24,
     textAlign: 'center',
-    color: '#CCC',
+    color: '#546E7A',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 
