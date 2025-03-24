@@ -145,11 +145,14 @@ const addDept = () => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <View style={styles.scrollContainer}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Create Department Account</Text>
           <Text style={styles.subtitle}>Please fill in the department details</Text>
         </View>
+  
+        {/* Form Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Department Details</Text>
   
@@ -167,18 +170,21 @@ const addDept = () => {
             </Picker>
             {errors.departmentName && <Text style={styles.errorText}>{errors.departmentName}</Text>}
           </View>
+  
+          {/* District Dropdown */}
           <View style={styles.pickerContainer}>
-        <Picker
-          selectedValue={formData.district}
-          onValueChange={(value) => handleInputChange("district", value)}
-          style={styles.picker}
-        >
-          <Picker.Item label="Select District" value="" />
-          {DISTRICTS.map((district) => (
-            <Picker.Item label={district} value={district} key={district} />
-          ))}
-        </Picker>
-      </View>
+            <Picker
+              selectedValue={formData.district}
+              onValueChange={(value) => handleInputChange("district", value)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Select District" value="" />
+              {DISTRICTS.map((district) => (
+                <Picker.Item label={district} value={district} key={district} />
+              ))}
+            </Picker>
+          </View>
+  
           {/* Access Areas (Multi-select) */}
           <View style={styles.inputContainer}>
             <MultiSelect
@@ -200,6 +206,7 @@ const addDept = () => {
               displayKey="name"
               submitButtonColor="#1e3a8a"
               submitButtonText="Select"
+              styleMainWrapper={{ height: 150 }} // Limit height
             />
             {errors.accessAreas && <Text style={styles.errorText}>{errors.accessAreas}</Text>}
           </View>
@@ -232,21 +239,21 @@ const addDept = () => {
           </View>
         </View>
   
-        {/* Submit Button */}
+        {/* Submit Button (inside ScrollView but with extra padding at bottom) */}
         <TouchableOpacity
           style={[styles.navButton, styles.submitButton]}
           onPress={handleSignUp}
         >
           <Text style={styles.navButtonText}>Create Department Account</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8fafc" },
-  scrollContainer: { flexGrow: 1, padding: 20 },
+  scrollContainer: { flexGrow: 1, padding: 40 },
   header: { alignItems: "center", marginBottom: 30 },
   title: { fontSize: 25, fontWeight: "bold", color: "#1e3a8a", marginBottom: 8 },
   subtitle: { fontSize: 16, color: "#64748b" },
@@ -299,6 +306,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 20,
   },
+ 
 });
 
 export default addDept;
