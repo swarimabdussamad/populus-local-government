@@ -1,3 +1,5 @@
+// app/_layout.js
+import React from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -24,7 +26,7 @@ export default function RootLayout() {
   }, [loaded]);
 
   if (!loaded) {
-    return null;
+    return null; // Ensure this returns valid JSX or null
   }
 
   return (
@@ -34,12 +36,7 @@ export default function RootLayout() {
         <Stack.Screen name="(login)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabd)" options={{ headerShown: false }} />
-        
-
-        
-        
-
-        
+        <Stack.Screen name="(admin)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

@@ -11,6 +11,7 @@ import HouseDetails from '@/app/(tabd)/HouseDetails'; // Adjust the path if need
 import SurveyList from "@/app/(tabd)/survey/SurveyList";
 import NewSurvey from "@/app/(tabd)/survey/NewSurvey";
 import Profile from "@/app/(tabd)/profiled";
+import HomeDepartment from "./homed";
 
 const Tab = createBottomTabNavigator();
 const SurveyStack = createNativeStackNavigator();
@@ -41,8 +42,8 @@ const HomeStackNavigator = () => {
     <HomeStack.Navigator>
       <HomeStack.Screen
         name="Home"
-        component={Home}
-        options={{ title: "Home" }}
+        component={HomeDepartment}
+        options={{ headerShown: false }}
       />
       <HomeStack.Screen
         name="Weather"

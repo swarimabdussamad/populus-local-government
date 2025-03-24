@@ -1,194 +1,381 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState,useEffect, useContext } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   FlatList,
   TouchableOpacity,
   Modal,
   TextInput,
+  Image,
+  SafeAreaView,
+  StatusBar,
+  Platform,
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  RefreshControl,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { PermissionsAndroid} from 'react-native';
+import axios from 'axios';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { Picker } from '@react-native-picker/picker';
-import { useNavigation } from '@react-navigation/native';
-import styles from './Styles/shome'
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { API_URL } from '@/constants/constants';
+import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
+import { WeatherContext } from '@/app/_layout'; // Adjust path to match your file structure
+import styles from "@/app/(tabs)/Styles/homestyle";
+import { launchImageLibrary, ImageLibraryOptions, MediaType, ImagePickerResponse } from 'react-native-image-picker';
+import * as ImagePicker from 'expo-image-picker';
+import { Linking } from 'react-native';
+import Feather from 'react-native-vector-icons/Feather';
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { jwtDecode } from 'jwt-decode';
 
-// Interfaces for props
+
+const COLORS = {
+  primary: '#2C3E50', // Deep navy blue
+  secondary: '#1E88E5', // Vibrant blue
+  background: '#F8F9FA', // Light gray background
+  text: '#212121', // Dark gray for readability
+  subtext: '#757575', // Muted gray for less prominent text
+  white: '#FFFFFF',
+  border: '#E0E0E0', // Subtle border color
+  error: '#D32F2F', // Strong red for errors
+  success: '#388E3C', // Green for success messages
+  textLight: '#546E7A',
+};
+
+// Define the type for your navigation stack
+type HomeStackParamList = {
+  Home: undefined; // No parameters expected for the Home screen
+  ImportResident: undefined; // No parameters expected for the ImportResident screen
+};
+
+// Define the type for the navigation prop
+type HomeScreenNavigationProp = StackNavigationProp<HomeStackParamList, "Home">;
+
+const DEPARTMENTS: Department[] = [
+  
+  { 
+    id: 2, 
+    name: 'Health Department', 
+    color: '#2ECC71',
+    icon: 'local-hospital',  // ✅ MaterialIcons
+    iconFamily: 'MaterialIcons'
+  },
+  { 
+    id: 3, 
+    name: 'Police Department', 
+    color: '#34495E',
+    icon: 'police-badge',  // ✅ MaterialCommunityIcons
+    iconFamily: 'MaterialCommunityIcons'
+  },
+  { 
+    id: 4, 
+    name: 'Fire Department', 
+    color: '#E74C3C',
+    icon: 'fire-truck',  // ✅ MaterialCommunityIcons
+    iconFamily: 'MaterialCommunityIcons'
+  },
+  { 
+    id: 5, 
+    name: 'Education Department', 
+    color: '#9B59B6',
+    icon: 'school',  // ✅ MaterialIcons
+    iconFamily: 'MaterialIcons'
+  },
+  { 
+    id: 6, 
+    name: 'Transportation Department', 
+    color: '#F1C40F',
+    icon: 'bus',  // ✅ MaterialCommunityIcons
+    iconFamily: 'MaterialCommunityIcons'
+  },
+  { 
+    id:7, 
+    name: 'Environmental Department', 
+    color: '#16A085',
+    icon: 'leaf',  // ✅ MaterialCommunityIcons
+    iconFamily: 'MaterialCommunityIcons'
+  },
+  { 
+    id: 8, 
+    name: 'Social Services', 
+    color: '#E67E22',
+    icon: 'account-group',  // ✅ MaterialCommunityIcons
+    iconFamily: 'MaterialCommunityIcons'
+  },
+];
+
+
+type Department = {
+  id: number;
+  name: string;
+  color: string;
+  icon: string;
+  iconFamily: 'MaterialIcons'|'MaterialCommunityIcons';
+};
+
+
+interface Comment {
+  username: string;
+  message: string;
+  createdAt: Date;
+}
+
+interface DecodedToken {
+  username: string;
+  userId: string;
+  exp: number;
+  // Add any other properties that might be in your token
+}
+
+const getUserInfoFromToken = async (): Promise<{ username: string; userId: string }> => {
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    
+    if (!token) {
+      console.log('No token found in AsyncStorage');
+      return { username: 'Anonymous', userId: '0000' }; // Default values
+    }
+    
+    const decodedToken = jwtDecode(token) as DecodedToken;
+    console.log("username of the other department:",decodedToken.username);
+    console.log("expiry time of the other department:",decodedToken.exp);
+    return {
+      username: decodedToken.username || 'Anonymous',
+      userId: decodedToken.userId || '0000',
+       // Assuming presidentId is the access value
+       
+    };
+  } catch (error) {
+    console.error('Error getting user information from token:', error);
+    return { username: 'Anonymous', userId: '0000' }; // Default values on error
+  }
+};
+
+
 interface Post {
-  id: string;
+  _id: string;
   department: string;
-  time: string;
+  time: Date;
   title: string;
   message: string;
+  imageUri?: string; 
   reactions: {
     likes: number;
     dislikes: number;
-    comments: any[];
+    comments: Comment[];
   };
-  createdAt?: string;
+  createdAt: Date;
+  userReaction?: 'like' | 'dislike' | null;
 }
-
-interface PostTypeModalProps {
-  visible: boolean;
-  onClose: () => void;
-  onSelectType: (type: 'announcement' | 'alert') => void;
+interface UserReaction {
+  userId: string;
+  reaction: 'like' | 'dislike';
 }
-
-interface PostModalProps {
-  visible: boolean;
-  onClose: () => void;
-  postType: 'announcement' | 'alert';
-  onSubmit: (postData: {
-    department: string;
-    time: string;
-    title: string;
-    message: string;
-    reactions: {
-      likes: number;
-      dislikes: number;
-      comments: [];
-    };
-  }) => void;
+interface NewPost {
+  department: string;
+  title: string;
+  message: string;
+  imageUri: string | null;
 }
+const options: ImageLibraryOptions = {
+  mediaType: 'photo' as MediaType,
+  quality: 0.8,
+  maxWidth: 1200,
+  maxHeight: 1200,
+};
+// Department Icon Component
+const DepartmentIcon: React.FC<{ department: Department; size?: number; color?: string }> = ({
+  department,
+  size = 24,
+  color,
+}) => {
+  if (!department) return null;
 
-const WeatherCard = () => {
-  const navigation = useNavigation();
+  if (department.iconFamily === 'MaterialIcons') {
+    return <MaterialIcons name={department.icon} size={size} color={color || department.color} />;
+  } else if (department.iconFamily === 'MaterialCommunityIcons') {
+    return <MaterialCommunityIcons name={department.icon} size={size} color={color || department.color} />;
+  }
+
+  return null;
+};
+
+
+// Department Picker Component
+const DepartmentPicker: React.FC<{
+  selectedDepartment: string;
+  onSelect: (id: string) => void;
+}> = ({ selectedDepartment, onSelect }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const selectedDept = DEPARTMENTS.find((d) => d.name === selectedDepartment);;
 
   const handlePress = () => {
-    navigation.navigate('Weather'); // Navigate to screen named "Weather"
+    // Navigate to screen named "Weather"
   };
 
   return (
-    <TouchableOpacity 
-      style={styles.weatherCard}
-      onPress={handlePress}
-    >
-      <View style={styles.weatherContent}>
-        <View style={styles.weatherLeft}>
-          <Text style={styles.weatherTemp}>11°</Text>
-          <Text style={styles.weatherLocation}>Montreal, Canada</Text>
+    <>
+      <Pressable
+        style={styles.departmentInput}
+        onPress={() => setIsVisible(true)}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {selectedDept && (
+            <DepartmentIcon department={selectedDept} size={20}  />
+          )}
+          <Text style={styles.departmentInputText}>
+            {selectedDept ? selectedDept.name : 'Select Department'}
+          </Text>
         </View>
-        <View style={styles.weatherRight}>
-          <MaterialCommunityIcons
-            name="weather-partly-cloudy"
-            size={40}
-            color="#666"
-          />
-          <Text style={styles.weatherCondition}>Partly Cloudy</Text>
+        <Icon name="chevron-down" size={20} color={COLORS.subtext} />
+      </Pressable>
+
+      <Modal
+        visible={isVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsVisible(false)}
+      >
+        <View style={styles.pickerModalContainer}>
+          <View style={styles.pickerModalContent}>
+            <Text style={styles.pickerModalTitle}>Select Department</Text>
+            
+            <FlatList
+              data={DEPARTMENTS}
+              
+              keyExtractor={(item, index) => `${item}-${index}`}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.departmentOption}
+                  onPress={() => {
+                    onSelect(item.name);
+                    setIsVisible(false);
+                  }}
+                >
+                  <View style={[styles.departmentColor, { backgroundColor: item.color }]}>
+                    <DepartmentIcon department={item} size={24} color={COLORS.white} />
+                   </View>
+                  <Text style={styles.departmentOptionText}>{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+
+            <TouchableOpacity
+              style={styles.pickerModalCloseButton}
+              onPress={() => setIsVisible(false)}
+            >
+              <Text style={styles.pickerModalCloseText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
+      </Modal>
+    </>
   );
 };
 
-const PostTypeModal: React.FC<PostTypeModalProps> = ({
-  visible,
-  onClose,
-  onSelectType,
-}) => (
-  <Modal
-    visible={visible}
-    transparent={true}
-    animationType="fade"
-    onRequestClose={onClose}
-  >
-    <TouchableOpacity
-      style={styles.postTypeOverlay}
-      activeOpacity={1}
-      onPress={onClose}
-    >
-      <View style={styles.postTypeContainer}>
-        <TouchableOpacity
-          style={styles.postTypeButton}
-          onPress={() => onSelectType('announcement')}
-        >
-          <MaterialCommunityIcons name="bullhorn" size={24} color="#6200ee" />
-          <Text style={styles.postTypeText}>Announcement</Text>
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.postTypeButton}
-          onPress={() => onSelectType('alert')}
-        >
-          <MaterialCommunityIcons name="alert-circle" size={24} color="#dc3545" />
-          <Text style={styles.postTypeText}>Alert</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  </Modal>
-);
 
-const PostModal: React.FC<PostModalProps> = ({
-  visible,
-  onClose,
-  postType,
-  onSubmit,
-}) => {
-  const [department, setDepartment] = useState('');
-  const [title, setTitle] = useState('');
-  const [message, setMessage] = useState('');
-   
-  
-  const handleSubmit = () => {
-    onSubmit({
-      department,
-      time: new Date().toISOString(),
-      title,
-      message,
-      reactions: { likes: 0, dislikes: 0, comments: [] },
-    });
-    setDepartment('');
-    setTitle('');
-    setMessage('');
+// Comment Modal Component
+const CommentModal: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+  postId: string;
+  comments: Comment[];
+  onAddComment: (comment: string) => Promise<void>;
+}> = ({ visible, onClose, postId, comments, onAddComment }) => {
+  const [newComment, setNewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!newComment.trim()) return;
+    
+    setIsSubmitting(true);
+    try {
+      await onAddComment(newComment.trim());
+      setNewComment('');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to post comment. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.postModalContainer}>
-        <View style={styles.postModalHeader}>
-          <TouchableOpacity onPress={onClose}>
-            <Icon name="close-outline" size={28} color="#000" />
-          </TouchableOpacity>
-          <Text style={styles.postModalTitle}>
-            {postType === 'announcement' ? 'New Announcement' : 'New Alert'}
-          </Text>
-          <TouchableOpacity
-            style={[
-              styles.postModalSubmit,
-              !(department && title && message) && styles.postModalSubmitDisabled,
-            ]}
-            onPress={handleSubmit}
-            disabled={!(department && title && message)}
-          >
-            <Text style={styles.postModalSubmitText}>Post</Text>
-          </TouchableOpacity>
-        </View>
+  const renderComment = ({ item }: { item: Comment }) => (
+    <View style={styles.commentItem}>
+      <View style={styles.commentHeader}>
+        <Text style={styles.username}>{item.username}</Text>
+        <Text style={styles.commentTime}>
+          {new Date(item.createdAt).toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
+        </Text>
+      </View>
+      <Text style={styles.commentMessage}>{item.message}</Text>
+    </View>
+  );
 
-        <View style={styles.postModalContent}>
-          <Picker
-            selectedValue={department}
-            style={styles.input}
-            onValueChange={(itemValue) => setDepartment(itemValue)}
-          >
-            <Picker.Item label="Select Department" value="" />
-            <Picker.Item label="Health Department" value="Health Department" />
-            <Picker.Item label="Police Department" value="Police Department" />
-            <Picker.Item label="Local Government" value="Local Government" />
-          </Picker>
-          <TextInput
-            style={styles.input}
-            placeholder="Title"
-            value={title}
-            onChangeText={setTitle}
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.commentModalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Comments</Text>
+            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+              <Icon name="close" size={24} color={COLORS.text} />
+            </TouchableOpacity>
+          </View>
+
+          <FlatList
+            data={comments}
+            renderItem={renderComment}
+            keyExtractor={(item, index) => index.toString()}
+            contentContainerStyle={styles.commentsList}
+            ListEmptyComponent={
+              <View style={styles.emptyComments}>
+                <Icon name="chatbubbles-outline" size={48} color={COLORS.subtext} />
+                <Text style={styles.emptyCommentsText}>No comments yet. Be the first to comment!</Text>
+              </View>
+            }
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Message"
-            value={message}
-            onChangeText={setMessage}
-            multiline
-          />
+
+          <View style={styles.commentInput}>
+            <TextInput
+              style={styles.commentTextInput}
+              placeholder="Write a comment..."
+              placeholderTextColor={COLORS.subtext}
+              value={newComment}
+              onChangeText={setNewComment}
+              multiline
+            />
+            <TouchableOpacity
+              style={[
+                styles.commentSubmitButton,
+                (!newComment.trim() || isSubmitting) && styles.commentSubmitButtonDisabled
+              ]}
+              onPress={handleSubmit}
+              disabled={!newComment.trim() || isSubmitting}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color={COLORS.white} />
+              ) : (
+                <Icon name="send" size={20} color={COLORS.white} />
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -196,212 +383,660 @@ const PostModal: React.FC<PostModalProps> = ({
 };
 
 
-
-const Home = () => {
+// Main Home Component
+const HomeDepartment = () => {
+  
+  const navigation = useNavigation();
+ 
   const [posts, setPosts] = useState<Post[]>([]);
-  const [postTypeModalVisible, setPostTypeModalVisible] = useState(false);
-  const [postModalVisible, setPostModalVisible] = useState(false);
-  const [selectedPostType, setSelectedPostType] = useState<'announcement' | 'alert'>(
-    'announcement'
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  
+  const [newPost, setNewPost] = useState({
+    department: '',
+    title: '',
+    message: '',
+    imageUri:  null as string | null,
+  });
+  const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
-  const handlePostTypeSelect = (type: 'announcement' | 'alert') => {
-    setPostTypeModalVisible(false);
-    setSelectedPostType(type);
-    setPostModalVisible(true);
-  };
-
+  // Fetch posts from the backend
   useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`${API_URL}/posts/display`);
-        
-        // Ensure the response is okay
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-  
-        const data = await response.json();
-  
-        // // Validate that the data is an array
-        // if (data && Array.isArray(data.announcements)) {
-        //   setPosts(data.announcements);
-        // } else {
-        //   console.error('Fetched data is not an array:', data);
-        //   setPosts([]); // Set to an empty array if the data format is unexpected
-        // }
-        const processedPosts = data.announcements.map(post => ({
-          ...post,
-          reactions: post.reactions || { 
-            likes: 0, 
-            dislikes: 0, 
-            comments: [] 
-          }
-        }));
-  
-        setPosts(processedPosts);
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-        setPosts([]); // Set to an empty array in case of an error
-      }
-    };
-  
     fetchPosts();
   }, []);
-  
-  
 
-  
-
-
-  const handlePostSubmit = async (postData: Omit<Post, 'id'>) => {
+  const fetchPosts = async () => {
+    setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/posts/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(postData),
+      const userInfo = await getUserInfoFromToken();
+        const access = userInfo.username;
+        const response = await axios.get(`${API_URL}/posts/display`, {
+          params: {
+              access: access // Pass the access value from the token
+          }
       });
-      const newPost = await response.json();
-      setPosts((prevPosts) => [newPost, ...prevPosts]);
-      setPostModalVisible(false);
+      console.log("display");
+      console.log("DEPARTMENTS Data:", DEPARTMENTS.map((d) => d.id));
+
+      const transformedPosts = response.data.announcements.map((post : any ) => ({
+        _id: post._id,
+        department: post.department,
+        time: new Date(post.time),
+        title: post.title,
+        message: post.message,
+        imageUri: post.imageUri,
+        reactions: {
+          likes: post.reactions?.likes || 0,
+          dislikes: post.reactions?.dislikes || 0,
+          comments: post.reactions?.comments || []
+        },
+        createdAt: new Date(post.createdAt),
+        hasLiked: false,
+        hasDisliked: false
+      }));
+      setPosts(transformedPosts);
     } catch (error) {
-      console.error(error);
+      Alert.alert(
+        'Error',
+        'Failed to fetch posts. Please check your connection and try again.',
+        [{ text: 'Retry', onPress: fetchPosts }, { text: 'OK' }]
+      );
+      console.error('Fetch posts error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
-  
 
-  const handleDelete = async (id: string) => {
+  const handleReaction = async (postId: string, type: 'like' | 'dislike') => {
     try {
-      await fetch(`${API_URL}/posts/delete/${id}`, { method: 'DELETE' });
-      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== id));
-    } catch (error) {
-      console.error(error);
-    }
-  };
+      const userInfo = await getUserInfoFromToken();
+        const userId = userInfo.userId;
+   
+      const response = await axios.post(`${API_URL}/posts/${postId}/reaction`, {
+        userId,
+        type
+      });
 
-  const renderPost = ({ item }: { item: Post }) => {
-    
-    const reactions = item.reactions || { 
-      likes: 0, 
-      dislikes: 0, 
-      comments: [] 
-    };
-  
+      //const response = await axios.post(`${API_URL}/posts/${postId}/${type}`);
+      //const updatedReaction = type === 'like' ? { likes: response.data.reactions.likes } : { dislikes: response.data.reactions.dislikes };
 
-    const getDepartmentIcon = (department: string) => {
-      switch (department) {
-        case 'Health Department':
-          return <MaterialCommunityIcons name="hospital" size={24} color="#00b894" />;
-        case 'Police Department':
-          return <MaterialCommunityIcons name="police-badge" size={24} color="#0984e3" />;
-        case 'Local Government':
-          return <MaterialCommunityIcons name="city" size={24} color="#e17055" />;
-        default:
-          return <MaterialCommunityIcons name="help-circle" size={24} color="#d63031" />;
-      }
-    };
-    const handleReaction = (type: 'like' | 'dislike') => {
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
-          post.id === item.id
+          post._id === postId 
             ? {
                 ...post,
                 reactions: {
                   ...post.reactions,
-                  likes: type === 'like' ? (post.reactions.likes || 0) + 1 : post.reactions.likes || 0,
-                  dislikes: type === 'dislike' ? (post.reactions.dislikes || 0) + 1 : post.reactions.dislikes || 0,
+                  likes: response.data.reactions.likes,
+                  dislikes: response.data.reactions.dislikes
                 },
+                userReaction: response.data.userReaction
               }
             : post
         )
       );
-    };
+    } catch (error) {
+      Alert.alert('Error', `Failed to ${type} post. Please try again.`);
+    }
+  };
 
+  const handleComment = (postId: string) => {
+    console.log("postId:", postId);
+    
+
+    setSelectedPostId(postId);
+    setCommentModalVisible(true);
+  };
+
+  const handleAddComment = async (postId: string, message: string) => {
+    console.log( "postID" ,postId  );
+    console.log("message",message);
+
+    const userInfo = await getUserInfoFromToken();
+    const username = userInfo.username;
+
+    try {
+      const response = await axios.post(`${API_URL}/posts/${postId}/comments`, {
+        username,
+        message
+      });
+      console.log(response.data);
+
+          // Update local state with new comment
+    setPosts((prevPosts) =>
+      prevPosts.map((post) => {
+        if (post._id === postId) {
+          return {
+            ...post,
+            reactions: {
+              ...post.reactions,
+              comments: [...post.reactions.comments, response.data.comment], // Use the comment from the response
+            },
+          };
+        }
+        return post;
+      })
+    );
+     // Fetch the latest comments after adding a new comment
+     await fetchComments(postId);
+      return response.data;
+    } catch (error) {
+      console.error('Add comment error:', error);
+      throw error;
+    }
+  };
+
+  const fetchComments = async (postId: string) => {
+    try {
+      const response = await axios.get(`${API_URL}/posts/${postId}/comments`);
+      console.log("Fetched comments:", response.data.comments);
+  
+      // Update local state with fetched comments
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => {
+          if (post._id === postId) {
+            return {
+              ...post,
+              reactions: {
+                ...post.reactions,
+                comments: response.data.comments, // Update with sorted comments
+              },
+            };
+          }
+          return post;
+        })
+      );
+    } catch (error) {
+      console.error('Fetch comments error:', error);
+    }
+  };
+  
+ 
+
+  const [image, setImage] = useState<string | null>(null);
+
+  const handleImageUpload = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      alert('Camera roll permission is required!');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setImageUploading(true); // Start loading indicator
+      const imageUrl = await uploadToCloudinary(result.assets[0].uri); // Upload image and get URL
+      setNewPost((prev) => ({ ...prev, imageUri: imageUrl })); // Update newPost with the image URL
+      setImageUploading(false); // Stop loading indicator
+    }
+  };
+  const uploadToCloudinary = async (uri: string) => {
+    try {
+      // Create the FormData object for the image
+      const imagedata = new FormData();
+  
+      // Extract the file name and type from the URI
+      const filename = uri.split('/').pop();
+      const match = /\.(\w+)$/.exec(filename || '');
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+  
+      // Append the file data in the correct format for React Native
+      imagedata.append('file', {
+        uri,
+        name: filename || 'upload.jpg',
+        type,
+      }as any);
+  
+      // Append the upload preset
+      imagedata.append('upload_preset', 'post_images');
+  
+      // Make the request to Cloudinary
+      const uploadResponse = await axios.post(
+        'https://api.cloudinary.com/v1_1/dnwlvkrqs/image/upload',
+        imagedata,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+  
+      // Get the secure URL of the uploaded image
+      const imageUrl = uploadResponse.data.secure_url;
+      console.log('Uploaded:', imageUrl);
+      
+      return imageUrl; // Return the image URL
+      
+    } catch (error) {
+      console.error('Cloudinary upload failed:', error);
+      Alert.alert('Upload Failed', 'Could not upload the image. Please try again.');
+    }
+  };
+ 
+
+  const handleDeletePost = async (postId: string) => {
+    try {
+      // Confirm deletion with the user
+      Alert.alert(
+        'Delete Post',
+        'Are you sure you want to delete this post?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', onPress: async () => {
+            console.log(postId);
+            // Call the API to delete the post
+            await axios.delete(`${API_URL}/posts/delete/${postId}`);
+            
+            // Remove the post from the local state
+            setPosts((prevPosts) => prevPosts.filter((post) => post._id !== postId));
+            
+            Alert.alert('Success', 'Post deleted successfully.');
+
+            fetchPosts();
+          }},
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete the post. Please try again.');
+      console.error('Delete post error:', error);
+    }
+  };
+
+  const validatePost = () => {
+    if (!newPost.department) {
+      Alert.alert('Required Field', 'Please select a department.');
+      return false;
+    }
+    if (!newPost.title.trim()) {
+      Alert.alert('Required Field', 'Please enter a title.');
+      return false;
+    }
+    if (!newPost.message.trim()) {
+      Alert.alert('Required Field', 'Please enter content for your post.');
+      return false;
+    }
+    return true;
+  };
+
+  const submitPost = async () => {
+    if (!validatePost()) return;
+          // Get the token from AsyncStorage
+        const token = await AsyncStorage.getItem('userToken');
+        if (!token) {
+          alert("User token not found. Please log in again.");
+          console.log(token);
+          return;
+        }
+      try {
+         const postData = {
+          department: newPost.department,
+          title: newPost.title.trim(),
+          message: newPost.message.trim(),
+          imageUri: newPost.imageUri,
+          
+        };
+
+        console.log("Before Submitting post:", postData); // Debugging
+        const userInfo = await getUserInfoFromToken();
+        const userId = userInfo.userId;
+        const response = await axios.post(`${API_URL}/posts/create`, postData, {
+              headers: {
+                  'Authorization': `Bearer ${token}` // Include the token in the Authorization header
+              }
+          });
+        console.log('After Post submission response:', response.data);
+        
+        fetchPosts();
+
+        setModalVisible(false);
+        setNewPost({ department: '', title: '', message: '', imageUri: null });
+        Alert.alert('Success', 'Your post has been published successfully.');
+    }catch (error :any) {
+      Alert.alert(
+        'Error',
+        `Failed to submit post. ${error.response?.data?.message || 'Please try again.'}`,
+        [{ text: 'OK' }]
+      );
+      console.error('Post submission error:', error);
+    }
+  };
+ 
+  const renderPostItem = ({ item }: { item: Post }) => {
+    const department = DEPARTMENTS.find(d => d.name === item.department);
+
+    const formattedDate = new Date(item.createdAt).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+      // Update your share function to use proper typing
+      const shareToWhatsApp = async (item: Post) => {
+        try {
+          // Get department name
+          const departmentName = DEPARTMENTS.find(d => d.name === item.department)?.name || "Department not specified";
+          
+          // Format date nicely
+          const formattedDate = new Date(item.createdAt).toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          
+          // Create comprehensive formatted message
+          const message = 
+            `*${item.title}*\n\n` +
+            ` *${departmentName}\n` +
+            `*Date:* ${formattedDate}\n\n` +
+            `${item.message}\n\n` + 
+            (item.imageUri ? `*Image:* ${item.imageUri}\n\n` : "") +
+            "Shared from Populus App";
+          
+          // For WhatsApp sharing via Linking (no need for RNShare)
+          const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(message)}`;
+          
+          const canOpen = await Linking.canOpenURL(whatsappUrl);
+          if (canOpen) {
+            await Linking.openURL(whatsappUrl);
+          } else {
+            Alert.alert("WhatsApp not installed", "Please install WhatsApp to share content.");
+          }
+        } catch (error) {
+          console.error('Error sharing:', error);
+          Alert.alert(
+            'Sharing Failed',
+            'Could not share this post to WhatsApp. Please try again later.'
+          );
+        }
+      };
+    
     return (
       <View style={styles.postContainer}>
         <View style={styles.postHeader}>
-          {getDepartmentIcon(item.department)}
-          <Text style={styles.postDepartment}>{item.department}</Text>
-          <TouchableOpacity
-            onPress={() => handleDelete(item.id)}
-            style={styles.deleteButton}
+          <View style={styles.headerContent}>
+          {department && (
+          <View style={styles.departmentInfo}>
+            <DepartmentIcon 
+              department={department} 
+              size={29} 
+            />
+            <Text style={styles.departmentText}>
+              {department.name}
+            </Text>
+            </View>
+            )}
+          
+          <Text style={styles.postDate}>
+            {new Date(item.createdAt).toLocaleDateString(undefined, {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </Text>
+        </View>
+        
+         {/* Add Delete Icon */}
+         <TouchableOpacity
+          onPress={() => handleDeletePost(item._id)}
+          style={styles.deleteButton}
+        >
+          <Icon name="trash-outline" size={20} color={COLORS.error} />
+        </TouchableOpacity>
+      </View>
+
+        <Text style={styles.postTitle}>{item.title}</Text>
+        {item.imageUri && (
+          <Image
+            source={{ uri: item.imageUri }}
+            style={styles.postImage}
+            resizeMode="cover"
+          />
+         )}
+        <Text style={styles.postContent}>{item.message}</Text>
+        
+        <View style={styles.postActions}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleReaction(item._id,'like')}
           >
-            <MaterialCommunityIcons name="delete" size={24} color="#f44336" />
+             <Icon 
+            name={item.userReaction === 'like' ? "thumbs-up" : "thumbs-up-outline"} 
+            size={18} 
+            color={item.userReaction === 'like' ? COLORS.secondary : COLORS.subtext} 
+          />
+            <Text style={styles.actionText}>{item.reactions.likes}</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleReaction(item._id,'dislike')}
+          >
+            <Icon 
+            name={item.userReaction === 'dislike' ? "thumbs-down" : "thumbs-down-outline"} 
+            size={18} 
+            color={item.userReaction === 'dislike' ? COLORS.error : COLORS.subtext} 
+          />
+            <Text style={styles.actionText}>{item.reactions.dislikes }</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleComment(item._id)}
+          >
+            <Icon name="chatbubble-outline" size={18} color={COLORS.subtext} />
+            <Text style={styles.actionText}>{item.reactions.comments.length}</Text>
+          </TouchableOpacity>
 
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => shareToWhatsApp(item)}
+          >
+            <Icon name="logo-whatsapp" size={20} color="#25D366" />
+            <Text style={styles.actionText}>WhatsApp</Text>
+          </TouchableOpacity>
         </View>
-        <Text style={styles.postTitle}>{item.title}</Text>
-        <Text style={styles.postContent}>{item.message}</Text>
-        <Text style={styles.postTimestamp}>
-          {item.createdAt
-            ? new Date(item.createdAt).toLocaleString()
-            : 'Date not available'}
-        </Text>
-        <View style={styles.reactionsContainer}>
-        <TouchableOpacity
-          style={styles.reactionButton}
-          onPress={() => handleReaction('like')}
-        >
-          <MaterialCommunityIcons name="thumb-up" size={20} color="#4caf50" />
-          <Text style={styles.reactionText}>{item.reactions.likes}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.reactionButton}
-          onPress={() => handleReaction('dislike')}
-        >
-          <MaterialCommunityIcons name="thumb-down" size={20} color="#f44336" />
-          <Text style={styles.reactionText}>{item.reactions.dislikes}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.reactionButton}>
-          <MaterialCommunityIcons name="comment" size={20} color="#2196f3" />
-          <Text style={styles.reactionText}>{item.reactions.comments.length}</Text>
-        </TouchableOpacity>
-        
-      </View>
+        {selectedPostId === item._id && (
+          <CommentModal
+            visible={commentModalVisible}
+            onClose={() => setCommentModalVisible(false)}
+            postId={item._id}
+            comments={item.reactions.comments}
+            onAddComment={(message) => handleAddComment(item._id, message)}
+          />
+        )}
       </View>
     );
   };
 
-  return (
-    <View style={styles.container}>
-      <WeatherCard />
+  const Header = () => {
+    return (
+      <View style={headerStyles.container}>
+        <Text style={headerStyles.title}>POPULUS</Text>
+        <TouchableOpacity style={headerStyles.alertButton}>
+          <Icon name="notifications-outline" size={24} color={COLORS.primary} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
-      <FlatList
-        data={posts}
-        renderItem={renderPost}
-        keyExtractor={(item) => (item.id ? item.id.toString() : Math.random().toString())}
-        contentContainerStyle={styles.postsList}
-      />
+  const renderHeader = () => (
+    <View>
+
+      <WeatherCard/>
+
+    </View>
+  );
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+
+      
+
+      {isLoading ? (
+        <ActivityIndicator size="large" color={COLORS.secondary} style={styles.loader} />
+      ) : (
+
+        <FlatList
+          data={posts}
+          renderItem={renderPostItem}
+          keyExtractor={(item) => item._id}
+          refreshing={isLoading}
+          onRefresh={fetchPosts}
+          contentContainerStyle={styles.listContainer}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Icon name="documents-outline" size={48} color={COLORS.subtext} />
+              <Text style={styles.emptyStateText}>
+                No community posts yet.{'\n'}Be the first to share!
+              </Text>
+            </View>
+          }
+        />
+        
+      )}
 
       <TouchableOpacity
-        style={styles.fab}
-        onPress={() => setPostTypeModalVisible(true)}
+        style={styles.fabButton}
+        onPress={() => setModalVisible(true)}
+        activeOpacity={0.8}
       >
-        <MaterialCommunityIcons name="plus" size={24} color="#fff" />
+        <Icon name="add" size={24} color={COLORS.white} />
       </TouchableOpacity>
 
-      <PostTypeModal
-        visible={postTypeModalVisible}
-        onClose={() => setPostTypeModalVisible(false)}
-        onSelectType={handlePostTypeSelect}
-      />
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Create New Post</Text>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={styles.modalCloseButton}
+              >
+                <Icon name="close" size={24} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
 
-      <PostModal
-        visible={postModalVisible}
-        onClose={() => setPostModalVisible(false)}
-        postType={selectedPostType}
-        onSubmit={handlePostSubmit}
-      />
-    </View>
+            <DepartmentPicker
+              selectedDepartment={newPost.department}
+              onSelect={(departmentId) =>
+                setNewPost((prev) => ({ ...prev, department: departmentId }))
+              }
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Post Title"
+              placeholderTextColor={COLORS.subtext}
+              value={newPost.title}
+              onChangeText={(text) => setNewPost((prev) => ({ ...prev, title: text }))}
+              maxLength={100}
+            />
+
+            <TextInput
+              style={[styles.input, styles.contentInput]}
+              placeholder="Write your post content here..."
+              placeholderTextColor={COLORS.subtext}
+              value={newPost.message}
+              onChangeText={(text) => setNewPost((prev) => ({ ...prev, message: text }))}
+              multiline
+              textAlignVertical="top"
+            />
+
+{newPost.imageUri ? (
+  <View style={styles.imagePreviewContainer}>
+    <Image
+      source={{ uri: newPost.imageUri }}
+      style={styles.imagePreview}
+      resizeMode="cover"
+    />
+    <TouchableOpacity
+      style={styles.removeImageButton}
+      onPress={() => setNewPost((prev) => ({ ...prev, imageUri: null }))}
+    >
+      <Icon name="close-circle" size={24} color={COLORS.error} />
+    </TouchableOpacity>
+  </View>
+) : (
+  <TouchableOpacity
+    style={styles.imageUploadButton}
+    onPress={handleImageUpload}
+    disabled={imageUploading}
+  >
+    {imageUploading ? (
+      <ActivityIndicator size="small" color={COLORS.secondary} />
+    ) : (
+      <>
+        <Icon name="image-outline" size={24} color={COLORS.secondary} />
+        <Text style={styles.imageUploadText}>Add Image</Text>
+      </>
+    )}
+  </TouchableOpacity>
+)}
+
+
+
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={submitPost}
+            >
+              <Text style={styles.submitButtonText}>Publish Post</Text>
+            </TouchableOpacity>
+            
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 };
 
+export default HomeDepartment;
+
+const headerStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14, // Increased vertical padding
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    width: '100%', // Ensure it takes full width
+    elevation: 2, // Add slight shadow on Android
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    marginTop: 16,
+  },
+  title: {
+    fontSize: 24, // Increased font size
+    fontWeight: 'bold',
+    color: COLORS.primary,
+    letterSpacing: 0.5, // Slight letter spacing for better legibility
+  },
+  alertButton: {
+    padding: 8, // Increased touchable area
+  },
+});
 
 
-export default Home;
-  

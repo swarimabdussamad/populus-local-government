@@ -149,7 +149,7 @@ const getUserInfoFromToken = async (): Promise<{ username: string; userId: strin
     }
     
     const decodedToken = jwtDecode(token) as DecodedToken;
-    
+    console.log("Userbane of local government:",decodedToken.username);
     return {
       username: decodedToken.username || 'Anonymous',
       userId: decodedToken.userId || '0000',

@@ -3,7 +3,7 @@ import React from 'react'
 import {Redirect} from 'expo-router';  
 
 export default function App() {
-  return <Redirect href="/(login)/login" />;
+  return <Redirect href="/login" />;
 }
 
 const styles=StyleSheet.create({

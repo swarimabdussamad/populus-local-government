@@ -19,9 +19,9 @@ const SplashScreen = () => {
         
         if (token) {
           if (userRole === 'local_government') {
-            router.replace('/home');
+            router.replace('/login');
           }else {
-            router.replace('/homed');
+            router.replace('/login');
           }
         } else {
           router.replace('/login');
