@@ -19,101 +19,21 @@ const SELF_GOVERNMENT_TYPES = ["Panchayath", "Municipality"];
 const PALAKKAD_LOCAL_BODIES = {
   Panchayath: [
     "SREEKRISHNAPURAM",
-    "AGALI",
-    "AKATHETHARA",
-    "ALANALLUR",
-    "ALATHUR",
-    "AMBALAPARA",
-    "ANAKKARA",
-    "ANANGANADI",
-    "AYILUR",
-    "CHALAVARA",
-    "CHALISSERI",
-    "COYALAMMANAM",
-    "ELAPPULLY",
-    "ELEVANCHERY",
-    "ERIMAYUR",
-    "ERUTHEMPATHY",
-    "KADAMPAZHIPURAM",
-    "KANHIRAPUZHA",
-    "KANNADI",
-    "KANNAMBRA",
-    "KAPPUR",
-    "KARAKURUSSI",
+
     "KARIMPUZHA",
-    "KAVASSERI",
-    "KERALASSERY",
-    "KIZHAKKANCHERY",
-    "KODUMBA",
-    "KODUVAYUR",
-    "KOLLENGODE",
-    "KONGAD",
-    "KOPPAM",
-    "KOTTOPPADAM",
-    "KOTTAYI",
-    "KOZHINJAMPARA",
-    "KARIMBA",
-    "KULUKKALLUR",
-    "KUMARAMPUTHUR",
-    "KUTHANUR",
-    "LAKKIDI PERUR",
+
     "MALAMPUZHA",
-    "MANKARA",
-    "MANNUR",
-    "MARUTHARODE",
-    "MATHUR",
-    "MUTHUTHALA",
-    "MELARCODE",
+
     "MUNDUR",
-    "MUTHALAMADA",
-    "NAGALASSERI",
-    "NALLEPPILLY",
-    "NELLAYA",
-    "NELLIAMPATHY",
-    "NEMMARA",
-    "ONGALLUR",
-    "PALLASSANA",
-    "POOKKOTTUKAVU",
-    "PARUTHUR",
-    "PARALI",
-    "PATTITHARA",
-    "PATTANCHERY",
-    "PERUMATTY",
-    "PERUNGOTTUKURUSSI",
-    "PERUVEMBA",
-    "PIRAYIRI",
-    "POLPULLY",
-    "PUDUCODE",
-    "PUDUNAGARAM",
-    "PUDUPPARIYARM",
-    "PUDUR",
-    "PUDUSSERI",
-    "SHOLAYUR",
-    "TARUR",
-    "THACHAMPARA",
-    "THACHANATTUKARA",
-    "THENKURUSSI",
-    "THENKARA",
-    "THIRUMITTACODE",
-    "THIRUVEGAPURA",
-    "TRIKKADIRI",
-    "THRITHALA",
-    "VADAKKANCHERY",
-    "VADAKARAPATHY",
-    "VADAVANNUR",
-    "VALLAPUZHA",
-    "VANDAZHY",
   ],
   Municipality: [
     "PALAKKAD",
-    "CHITTUR-TATTAMANGALAM",
     "MANNARKKAD",
     "CHERPULASSERY",
-    "OTTPPALAM",
-    "SHORANUR",
     "PATTAMBI",
-  ],
+  ],
 };
+const DISTRICTS = ["PALAKKAD", "MALAPPURAM"]; 
 
 // Define the shape of the form data
 interface FormData {
@@ -121,7 +41,9 @@ interface FormData {
   locality: string;
   email: string;
   phone: string;
+  district: string;
 }
+
 
 // Define the shape of the errors object
 interface Errors {
@@ -129,6 +51,7 @@ interface Errors {
   locality?: string;
   email?: string;
   phone?: string;
+  district?: string; 
 }
 
 const addLocal = () => {
@@ -138,6 +61,7 @@ const addLocal = () => {
     locality: "",
     email: "",
     phone:"",
+    district:"",
   });
   const [errors, setErrors] = useState<Errors>({});
 
@@ -169,6 +93,7 @@ const addLocal = () => {
     if (formData.phone && formData.phone.length !== 10) {
       newErrors.phone = "Phone number must be 10 digits";
     }
+    if (!formData.district) newErrors.district = "District is required"; 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       Alert.alert("Validation Error", "Please fill in all required fields correctly");
@@ -185,7 +110,8 @@ const addLocal = () => {
           locality: formData.locality,
           phone: formData.phone,
           email: formData.email,
-          selfGovType: formData.selfGovType
+          selfGovType: formData.selfGovType,
+          district: formData.district,
         }),
       });
 
@@ -224,6 +150,18 @@ const addLocal = () => {
         </View>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Government Details</Text>
+          <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.district}
+            onValueChange={(value) => handleInputChange("district", value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Select District" value="" />
+            {DISTRICTS.map((district) => (
+              <Picker.Item label={district} value={district} key={district} />
+            ))}
+          </Picker>
+        </View>
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={formData.selfGovType}

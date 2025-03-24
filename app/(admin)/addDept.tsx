@@ -19,8 +19,11 @@ import MultiSelect from "react-native-multiple-select"; // Install this library
 const DEPARTMENTS = [
     "Health Department",
     "Police Department",
+    "Fire Department",
     "Education Department",
-    "Transport Department",
+    "Transportation Department",
+    "Environmental Department",
+    "Social Services",
     "Finance Department",
     "Agriculture Department",
     "Water Resources Department",
@@ -47,13 +50,14 @@ const PALAKKAD_LOCAL_BODIES = {
     "PATTAMBI",
   ],
 };
-
+const DISTRICTS = ["PALAKKAD", "MALAPPURAM"];
 // Define the shape of the form data
 interface FormData {
   departmentName: string;
   accessAreas: string[];
   email: string;
   phone: string;
+  district: string;
 }
 
 // Define the shape of the errors object
@@ -62,6 +66,7 @@ interface Errors {
   accessAreas?: string;
   email?: string;
   phone?: string;
+  district?:string;
 }
 
 const addDept = () => {
@@ -71,6 +76,7 @@ const addDept = () => {
     accessAreas: [],
     email: "",
     phone: "",
+    district:"",
   });
   const [errors, setErrors] = useState<Errors>({});
 
@@ -93,7 +99,7 @@ const addDept = () => {
     if (formData.phone && formData.phone.length !== 10) {
       newErrors.phone = "Phone number must be 10 digits";
     }
-
+    if (!formData.district) newErrors.district = "District is required"; 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       Alert.alert("Validation Error", "Please fill in all required fields correctly");
@@ -161,7 +167,18 @@ const addDept = () => {
             </Picker>
             {errors.departmentName && <Text style={styles.errorText}>{errors.departmentName}</Text>}
           </View>
-  
+          <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={formData.district}
+          onValueChange={(value) => handleInputChange("district", value)}
+          style={styles.picker}
+        >
+          <Picker.Item label="Select District" value="" />
+          {DISTRICTS.map((district) => (
+            <Picker.Item label={district} value={district} key={district} />
+          ))}
+        </Picker>
+      </View>
           {/* Access Areas (Multi-select) */}
           <View style={styles.inputContainer}>
             <MultiSelect

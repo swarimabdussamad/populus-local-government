@@ -23,7 +23,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { API_URL } from '@/constants/constants';
 import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
-import { WeatherContext } from '@/app/_layout'; // Adjust path to match your file structure
+
 import styles from "@/app/(tabs)/Styles/homestyle";
 import { launchImageLibrary, ImageLibraryOptions, MediaType, ImagePickerResponse } from 'react-native-image-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -127,6 +127,7 @@ interface Comment {
 }
 
 interface DecodedToken {
+  role: any;
   username: string;
   userId: string;
   exp: number;
@@ -136,17 +137,17 @@ interface DecodedToken {
 const getUserInfoFromToken = async (): Promise<{ username: string; userId: string }> => {
   try {
     const token = await AsyncStorage.getItem('userToken');
-    
+    console.log(token);
     if (!token) {
       console.log('No token found in AsyncStorage');
       return { username: 'Anonymous', userId: '0000' }; // Default values
     }
     
     const decodedToken = jwtDecode(token) as DecodedToken;
-    console.log("username of the other department:",decodedToken.username);
+    console.log("username of the other department:",decodedToken.role);
     console.log("expiry time of the other department:",decodedToken.exp);
     return {
-      username: decodedToken.username || 'Anonymous',
+      username: decodedToken.role || 'Anonymous',
       userId: decodedToken.userId || '0000',
        // Assuming presidentId is the access value
        
@@ -215,9 +216,6 @@ const DepartmentPicker: React.FC<{
   const [isVisible, setIsVisible] = useState(false);
   const selectedDept = DEPARTMENTS.find((d) => d.name === selectedDepartment);;
 
-  const handlePress = () => {
-    // Navigate to screen named "Weather"
-  };
 
   return (
     <>
@@ -874,7 +872,7 @@ const HomeDepartment = () => {
 
   const renderHeader = () => (
     <View>
-
+      <Header/>
       <WeatherCard/>
 
     </View>
