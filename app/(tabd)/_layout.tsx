@@ -8,10 +8,11 @@ import Home from "./homed"
 import Weather from "@/app/(tabd)/weatherscreen";
 import Map from "@/app/(tabd)/map";
 import HouseDetails from '@/app/(tabd)/HouseDetails'; // Adjust the path if needed
-import SurveyList from "@/app/(tabd)/survey/SurveyList";
-import NewSurvey from "@/app/(tabd)/survey/NewSurvey";
+import SurveyList from "@/app/(tabd)/survey/SurveyListd";
+import NewSurvey from "@/app/(tabd)/survey/NewSurveyd";
 import Profile from "@/app/(tabd)/profiled";
 import HomeDepartment from "./homed";
+import SurveyResults from "./survey/SurveyResultd";
 
 const Tab = createBottomTabNavigator();
 const SurveyStack = createNativeStackNavigator();
@@ -26,6 +27,11 @@ const SurveyStackNavigator = () => {
         name="SurveyList"
         component={SurveyList}
         options={{ title: "Surveys" }}
+      />
+      <SurveyStack.Screen
+        name="SurveyResults"
+        component={SurveyResults}
+        options={{ title: "result" }}
       />
       <SurveyStack.Screen
         name="NewSurvey"
