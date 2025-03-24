@@ -8,11 +8,11 @@ import {
   Text,
   ScrollView
 } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { API_URL } from '@/constants/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PinchGestureHandler, State } from 'react-native-gesture-handler';
+import { PinchGestureHandler } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedGestureHandler,
   useAnimatedStyle,
@@ -24,23 +24,16 @@ type Plot = {
   id: string;
   image: string;
   type: string;
-};
-
-type SurveyResult = {
-  image?: string;
+  insights?: string;
 };
 
 const SurveyResults = () => {
   const route = useRoute();
-  const navigation = useNavigation();
   const { surveyId } = route.params as { surveyId: string };
   const [plots, setPlots] = useState<Plot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loadingType, setLoadingType] = useState<string | null>(null);
-
-  const windowWidth = Dimensions.get('window').width;
-  const windowHeight = Dimensions.get('window').height;
 
   const fetchAnalytics = async (endpoint: string) => {
     try {
@@ -66,17 +59,15 @@ const SurveyResults = () => {
 
       const data = await response.json();
       if (data.image) {
-        // Update the plots array, replacing any existing plot of the same type
         setPlots(prevPlots => {
-          // Filter out any existing plot of the same type
           const filteredPlots = prevPlots.filter(plot => plot.type !== endpoint);
-          // Add the new plot
           return [
             ...filteredPlots,
             {
               id: `${endpoint}-${Date.now()}`,
               image: data.image,
-              type: endpoint
+              type: endpoint,
+              insights: data.insights
             }
           ];
         });
@@ -116,7 +107,8 @@ const SurveyResults = () => {
           setPlots([{
             id: `initial-${Date.now()}`,
             image: data.image,
-            type: 'result'
+            type: 'result',
+            insights: data.insights
           }]);
         }
       } catch (err: any) {
@@ -129,7 +121,6 @@ const SurveyResults = () => {
     fetchData();
   }, [surveyId]);
 
-  // Individual Plot component that handles its own pinch scale
   const PlotItem = ({ plot }: { plot: Plot }) => {
     const scale = useSharedValue(1);
     const savedScale = useSharedValue(1);
@@ -164,6 +155,12 @@ const SurveyResults = () => {
             resizeMode="contain"
           />
         </PinchGestureHandler>
+        {plot.insights && (
+          <View style={styles.insightsContainer}>
+            <Text style={styles.insightsTitle}>Insights:</Text>
+            <Text style={styles.insightsText}>{plot.insights}</Text>
+          </View>
+        )}
         {loadingType === plot.type && (
           <View style={styles.overlayLoader}>
             <ActivityIndicator size="large" color="#0000ff" />
@@ -201,20 +198,43 @@ const SurveyResults = () => {
           </View>
         )}
       </ScrollView>
-      <View style={styles.buttonContainer}>
+
+      {/* Drawer-like Button Container */}
+      <View style={styles.drawerContainer}>
         <TouchableOpacity
-          style={[styles.button, loadingType === 'gender' && styles.disabledButton]}
+          style={[styles.drawerButton, loadingType === 'gender' && styles.disabledButton]}
           onPress={() => fetchAnalytics('gender')}
           disabled={loadingType !== null}
         >
-          <Text style={styles.buttonText}>Gender</Text>
+          <Text style={styles.drawerButtonText}>Gender</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.button, loadingType === 'age' && styles.disabledButton]}
+          style={[styles.drawerButton, loadingType === 'age' && styles.disabledButton]}
           onPress={() => fetchAnalytics('age')}
           disabled={loadingType !== null}
         >
-          <Text style={styles.buttonText}>Age</Text>
+          <Text style={styles.drawerButtonText}>Age</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.drawerButton, loadingType === 'income' && styles.disabledButton]}
+          onPress={() => fetchAnalytics('income')}
+          disabled={loadingType !== null}
+        >
+          <Text style={styles.drawerButtonText}>Income</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.drawerButton, loadingType === 'ward' && styles.disabledButton]}
+          onPress={() => fetchAnalytics('ward')}
+          disabled={loadingType !== null}
+        >
+          <Text style={styles.drawerButtonText}>Ward</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.drawerButton, loadingType === 'rationcard' && styles.disabledButton]}
+          onPress={() => fetchAnalytics('rationcard')}
+          disabled={loadingType !== null}
+        >
+          <Text style={styles.drawerButtonText}>Ration Card</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -225,8 +245,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   centerContainer: {
     flex: 1,
@@ -236,17 +254,16 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    width: '100%',
   },
   plotContainer: {
     width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height * 0.5,
+    minHeight: Dimensions.get('window').height * 0.5,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#EEEEEE',
-    paddingBottom: 10,
+    paddingBottom: 20,
     position: 'relative',
   },
   overlayLoader: {
@@ -267,30 +284,50 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '90%',
-    height: '90%',
+    height: Dimensions.get('window').height * 0.35,
   },
-  buttonContainer: {
+  insightsContainer: {
+    width: '90%',
+    padding: 15,
+    marginTop: 10,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+  },
+  insightsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333',
+  },
+  insightsText: {
+    fontSize: 14,
+    color: '#555',
+    lineHeight: 20,
+  },
+  drawerContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
-    paddingVertical: 15,
-    width: '100%',
+    padding: 10,
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#EEEEEE',
-    backgroundColor: 'white',
   },
-  button: {
+  drawerButton: {
     backgroundColor: '#007AFF',
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginHorizontal: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 20,
+    margin: 5,
+    minWidth: 80,
+    alignItems: 'center',
   },
   disabledButton: {
     backgroundColor: '#CCCCCC',
   },
-  buttonText: {
+  drawerButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   errorText: {
