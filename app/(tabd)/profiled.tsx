@@ -1,3 +1,5 @@
+
+Copy
 import React, { useEffect, useState } from 'react';
 import { 
   View, 
@@ -7,37 +9,75 @@ import {
   TouchableOpacity, 
   Platform,
   StatusBar,
-  Image,
-  Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/constants';
 import { useRouter } from 'expo-router';
+import { jwtDecode } from 'jwt-decode';
 
-const Profile = () => {
-  const [profileData, setProfileData] = useState(null);
+interface DecodedToken {
+  userId: string;
+  username: string;
+  [key: string]: any;
+}
+
+interface DepartmentProfile {
+  _id: string;
+  departmentName: string;
+  accessAreas: string[];
+  email: string;
+  username: string;
+  district: string;
+  phone: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+const DepartmentProfile = () => {
+  const [profileData, setProfileData] = useState<DepartmentProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  const getUserIdFromToken = async (): Promise<string | null> => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) return null;
+      
+      const decoded: DecodedToken = jwtDecode(token);
+      return decoded.userId;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  };
 
   const fetchProfileData = async () => {
     try {
+      setLoading(true);
+      setError(null);
       
-      const username = await AsyncStorage.getItem('currentUsername');
-      console.log("Username from AsyncStorage:", username);
-      const response = await fetch(`${API_URL}/department/profile/${username}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch profile');
+      const userId = await getUserIdFromToken();
+      if (!userId) {
+        throw new Error('Authentication required. Please login again.');
       }
 
-      const data = await response.json();
+      const response = await fetch(`${API_URL}/department/profile/${userId}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch profile');
+      }
+
+      const data: DepartmentProfile = await response.json();
       setProfileData(data);
-      console.log(data)
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      Alert.alert('Error', 'Failed to load profile data');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load profile data';
+      setError(message);
+      console.error('Error fetching profile:', err);
     } finally {
       setLoading(false);
     }
@@ -58,15 +98,12 @@ const Profile = () => {
         },
         {
           text: 'Logout',
-          style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.removeItem('userToken');
-              await AsyncStorage.removeItem('currentUsername');
-            
+              await AsyncStorage.multiRemove(['userToken', 'currentUsername']);
               router.replace('/login');
-            } catch (error) {
-              console.error('Logout error:', error);
+            } catch (err) {
+              console.error('Logout error:', err);
               Alert.alert('Error', 'Failed to logout');
             }
           }
@@ -83,31 +120,39 @@ const Profile = () => {
     );
   }
 
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={fetchProfileData}
+          >
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#1e3a8a" barStyle="light-content" />
       
       <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>Profile</Text>
+        <Text style={styles.headerTitle}>Department Profile</Text>
       </View>
 
       {profileData && (
         <>
           <View style={styles.profileOverview}>
-            <View style={styles.avatarContainer}>
-              {profileData.photo ? (
-                <Image source={{ uri: profileData.photo || 'file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252Fpopulus-63da366b-c99f-403c-b6e5-b7a0a4e9ddad/ImagePicker/d0824b5d-0aa4-428d-812c-2fc5f6403d14.jpeg' }} style={styles.avatar} />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Text style={styles.avatarText}>
-                    {profileData.name?.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-              )}
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>
+                {profileData.departmentName.charAt(0).toUpperCase()}
+              </Text>
             </View>
-            <Text style={styles.profileName}>{profileData.name}</Text>
-            <Text style={styles.profileRole}>{profileData.department || 'Department'}</Text>
-
+            <Text style={styles.profileName}>{profileData.departmentName}</Text>
           </View>
 
           <View style={styles.detailsContainer}>
@@ -137,7 +182,7 @@ const Profile = () => {
               </View>
               <View style={styles.sectionContent}>
                 <Text style={styles.sectionTitle}>Phone</Text>
-                <Text style={styles.sectionSubtitle}>{profileData.mobileNo}</Text>
+                <Text style={styles.sectionSubtitle}>{profileData.phone}</Text>
               </View>
             </View>
 
@@ -148,6 +193,18 @@ const Profile = () => {
               <View style={styles.sectionContent}>
                 <Text style={styles.sectionTitle}>District</Text>
                 <Text style={styles.sectionSubtitle}>{profileData.district}</Text>
+              </View>
+            </View>
+
+            <View style={styles.profileSection}>
+              <View style={styles.sectionIcon}>
+                <Ionicons name="map-outline" size={24} color="#1e3a8a" />
+              </View>
+              <View style={styles.sectionContent}>
+                <Text style={styles.sectionTitle}>Access Areas</Text>
+                <Text style={styles.sectionSubtitle}>
+                  {profileData.accessAreas.join(', ')}
+                </Text>
               </View>
             </View>
           </View>
@@ -166,7 +223,6 @@ const Profile = () => {
     </SafeAreaView>
   );
 };
-
 
 const styles = StyleSheet.create({
   loadingContainer: {
@@ -292,6 +348,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1e293b',
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ef4444',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#1e3a8a',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
 });
 
-export default Profile;
+export default DepartmentProfile;

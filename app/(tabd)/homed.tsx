@@ -23,7 +23,6 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { API_URL } from '@/constants/constants';
 import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
-
 import styles from "@/app/(tabs)/Styles/homestyle";
 import { launchImageLibrary, ImageLibraryOptions, MediaType, ImagePickerResponse } from 'react-native-image-picker';
 import * as ImagePicker from 'expo-image-picker';
