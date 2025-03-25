@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  Alert, 
+  TouchableOpacity, 
+  ActivityIndicator, 
+  Dimensions 
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
@@ -7,6 +16,8 @@ import { Table, Row, Rows } from 'react-native-table-component';
 import * as XLSX from 'xlsx';
 import { API_URL } from '@/constants/constants';
 import * as Linking from 'expo-linking';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
 // Column mapping for Excel import
 const COLUMN_MAPPING = {
@@ -77,12 +88,13 @@ const columnWidths: { [key: string]: number } = {
   isOwnerHome: 100,
 };
 
-
 interface ValidationError {
   row: number;
   column: string;
   message: string;
 }
+
+const { width } = Dimensions.get('window');
 
 const ImportResident: React.FC = () => {
   const router = useRouter();
@@ -448,7 +460,7 @@ const ImportResident: React.FC = () => {
 
   // Add this function to handle the download
   const downloadTemplate = async () => {
-    const templateUrl = 'https://docs.google.com/spreadsheets/d/1F1hqGHIKbtGUEbktLVcMUbTdWc5XvJg8/edit?usp=sharing&ouid=105719840336689489096&rtpof=true&sd=true'; // Replace with your template URL
+    const templateUrl = 'https://docs.google.com/spreadsheets/d/1F1hqGHIKbtGUEbktLVcMUbTdWc5XvJg8/edit?usp=sharing&ouid=105719840336689489096&rtpof=true&sd=true';
 
     try {
       // Open the URL in the user's browser
@@ -483,269 +495,233 @@ const ImportResident: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.scrollView}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Adding Group Resident Registration</Text>
+    <LinearGradient 
+      colors={['#f0f4f8', '#ffffff']} 
+      style={styles.container}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.headerContainer}>
+          <Ionicons name="cloud-upload-outline" size={48} color="#2c3e50" />
+          <Text style={styles.headerTitle}>Bulk Resident Import</Text>
+        </View>
 
         <View style={styles.instructionCard}>
-          <Text style={styles.instructionTitle}>Instructions:</Text>
-          <Text style={styles.instructionText}>
-            1. Download the Excel template using the button below.
-          </Text>
-          <Text style={styles.instructionText}>
-            2. Fill in the resident details in the Excel sheet.
-          </Text>
-          <Text style={styles.instructionText}>
-            3. Upload the completed Excel file.
-          </Text>
-          <Text style={styles.instructionText}>
-            4. Review the data and fix any validation errors.
-          </Text>
-          <Text style={styles.instructionText}>
-            5. Submit to register all residents at once.
-          </Text>
+          <View style={styles.instructionStep}>
+            <Ionicons name="download-outline" size={24} color="#3498db" />
+            <Text style={styles.instructionText}>Download Excel Template</Text>
+          </View>
+          <View style={styles.instructionStep}>
+            <Ionicons name="document-text-outline" size={24} color="#2ecc71" />
+            <Text style={styles.instructionText}>Fill in Resident Details</Text>
+          </View>
+          <View style={styles.instructionStep}>
+            <Ionicons name="cloud-upload-outline" size={24} color="#e74c3c" />
+            <Text style={styles.instructionText}>Upload Completed File</Text>
+          </View>
 
-          <TouchableOpacity style={styles.button} onPress={downloadTemplate}>
-            <Text style={styles.buttonText}>Download Template</Text>
+          <TouchableOpacity 
+            style={styles.templateButton} 
+            onPress={downloadTemplate}
+          >
+            <Text style={styles.templateButtonText}>Download Template</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Upload Excel File</Text>
-          <TouchableOpacity
-            style={styles.uploadButton}
-            onPress={pickExcelFile}
-            disabled={isLoading || isSubmitting}
-          >
-            <Text style={styles.uploadButtonText}>
-              {fileSelected ? fileSelected : 'Select Excel File'}
-            </Text>
-          </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.uploadCard} 
+          onPress={pickExcelFile}
+          disabled={isLoading || isSubmitting}
+        >
+          <Ionicons 
+            name="cloud-upload" 
+            size={48} 
+            color={fileSelected ? "#2ecc71" : "#3498db"} 
+          />
+          <Text style={styles.uploadText}>
+            {fileSelected ? `Selected: ${fileSelected}` : 'Upload Excel File'}
+          </Text>
+        </TouchableOpacity>
 
-          {isLoading && (
-            <View style={styles.loaderContainer}>
-              <ActivityIndicator size="large" color="#003366" />
-              <Text style={styles.loaderText}>Parsing data...</Text>
-            </View>
-          )}
+        {isLoading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#3498db" />
+            <Text style={styles.loadingText}>Processing Data...</Text>
+          </View>
+        )}
 
-          {parsedData.length > 0 && !isLoading && (
-            <>
-              <View style={styles.dataInfoContainer}>
-                <Text style={styles.dataInfoText}>
-                  {parsedData.length} residents found in file
-                </Text>
-                {validationErrors.length > 0 && (
-                  <Text style={styles.errorInfoText}>
-                    {validationErrors.length} validation errors found
-                  </Text>
-                )}
-
-                <TouchableOpacity
-                  style={styles.toggleButton}
-                  onPress={togglePreviewMode}
-                >
-                  <Text style={styles.toggleButtonText}>
-                    {previewMode === 'all' ? 'Show Errors Only' : 'Show All Data'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Custom Table with clickable rows */}
-              <ScrollView horizontal>
-                <View>
-                   {/* Table Header */}
-                  <View style={styles.tableHeader}>
-                    {tableHeaders.map((header, index) => (
-                      <View
-                        key={`header-${index}`}
-                        style={[styles.tableHeaderCell, { width: columnWidths[header] || 120 }]}
-                      >
-                        <Text style={styles.tableHeaderText}>{header}</Text>
-                      </View>
-                    ))}
-                  </View>
-
-                  {/* Table Rows */}
-                  {tableData.map((row, rowIndex) => (
-                    <TouchableOpacity
-                      key={`row-${rowIndex}`}
-                      style={styles.tableRow}
-                      onPress={() => showAllColumnsForRow(parseInt(row[0]) - 1)}
-                    >
-                      {row.map((cell, cellIndex) => (
-                        <View
-                          key={`cell-${cellIndex}`}
-                          style={[styles.tableCell, { width: columnWidths[tableHeaders[cellIndex]] || 120 }]}
-                        >
-                          <Text style={styles.tableCellText} numberOfLines={1} ellipsizeMode="tail">
-                            {cell}
-                          </Text>
-                        </View>
-                      ))}
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-
+        {parsedData.length > 0 && !isLoading && (
+          <View style={styles.dataCard}>
+            <View style={styles.dataHeader}>
+              <Text style={styles.dataHeaderText}>
+                {parsedData.length} Residents Found
+              </Text>
               {validationErrors.length > 0 && (
-                <View style={styles.errorContainer}>
-                  <Text style={styles.errorTitle}>Validation Errors:</Text>
-                  {validationErrors.map((error, index) => (
-                    <View key={`error-${index}`} style={styles.errorItem}>
-                      <Text style={styles.errorText}>
-                        <Text style={styles.errorBold}>Row {error.row + 1}</Text>: {error.column} - {error.message}
-                      </Text>
+                <Text style={styles.errorHeaderText}>
+                  {validationErrors.length} Validation Errors
+                </Text>
+              )}
+            </View>
+
+            <ScrollView horizontal>
+              <View>
+                {/* Table Header */}
+                <View style={styles.tableHeader}>
+                  {tableHeaders.map((header, index) => (
+                    <View
+                      key={`header-${index}`}
+                      style={[styles.tableHeaderCell, { width: columnWidths[header] || 120 }]}
+                    >
+                      <Text style={styles.tableHeaderText}>{header}</Text>
                     </View>
                   ))}
                 </View>
-              )}
 
-              {tableData.length === 0 && previewMode === 'errors' && (
-                <Text style={styles.noErrorsText}>No validation errors found!</Text>
-              )}
+                {/* Table Rows */}
+                {tableData.map((row, rowIndex) => (
+                  <TouchableOpacity
+                    key={`row-${rowIndex}`}
+                    style={styles.tableRow}
+                    onPress={() => showAllColumnsForRow(parseInt(row[0]) - 1)}
+                  >
+                    {row.map((cell, cellIndex) => (
+                      <View
+                        key={`cell-${cellIndex}`}
+                        style={[styles.tableCell, { width: columnWidths[tableHeaders[cellIndex]] || 120 }]}
+                      >
+                        <Text style={styles.tableCellText} numberOfLines={1} ellipsizeMode="tail">
+                          {cell}
+                        </Text>
+                      </View>
+                    ))}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
 
-              <TouchableOpacity
-                style={[
-                  styles.submitButton,
-                  (validationErrors.length > 0 || isSubmitting) && styles.disabledButton,
-                ]}
-                onPress={handleSubmit}
-                disabled={validationErrors.length > 0 || isSubmitting}
-              >
-                <Text style={styles.submitButtonText}>
-                  {isSubmitting ? 'Submitting...' : 'Register All Residents'}
-                </Text>
-              </TouchableOpacity>
-
-              {isSubmitting && (
-                <View style={styles.progressContainer}>
-                  <Text style={styles.progressText}>
-                    Progress: {successCount + failCount} / {parsedData.length}
-                  </Text>
-                  <Text style={styles.successText}>Success: {successCount}</Text>
-                  {failCount > 0 && (
-                    <Text style={styles.failText}>Failed: {failCount}</Text>
-                  )}
-                </View>
-              )}
-            </>
-          )}
-        </View>
-      </View>
-    </ScrollView>
+            <TouchableOpacity 
+              style={styles.submitButton} 
+              onPress={handleSubmit}
+              disabled={validationErrors.length > 0 || isSubmitting}
+            >
+              <Text style={styles.submitButtonText}>
+                {isSubmitting ? 'Registering...' : 'Register All Residents'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
   container: {
-    padding: 16,
+    flex: 1,
   },
-  title: {
+  scrollViewContent: {
+    padding: 16,
+    paddingTop: 50,
+  },
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  headerTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#003366',
+    fontWeight: '700',
+    color: '#2c3e50',
+    marginTop: 12,
   },
   instructionCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
+    backgroundColor: 'white',
+    borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  instructionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#003366',
+  instructionStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   instructionText: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 4,
+    marginLeft: 12,
+    fontSize: 16,
+    color: '#34495e',
   },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#003366',
-  },
-  button: {
-    backgroundColor: '#003366',
+  templateButton: {
+    backgroundColor: '#3498db',
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 12,
   },
-  buttonText: {
-    color: '#ffffff',
+  templateButtonText: {
+    color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },
-  uploadButton: {
-    height: 50,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    justifyContent: 'center',
+  uploadCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 24,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#3498db',
     borderStyle: 'dashed',
   },
-  uploadButtonText: {
-    color: '#666',
+  uploadText: {
+    marginTop: 12,
     fontSize: 16,
+    color: '#2c3e50',
   },
-  loaderContainer: {
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    backgroundColor: 'rgba(255,255,255,0.8)',
   },
-  loaderText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: '#666',
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#3498db',
   },
-  dataInfoContainer: {
-    marginTop: 16,
+  dataCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  dataHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 16,
   },
-  dataInfoText: {
-    fontSize: 16,
-    color: '#003366',
+  dataHeaderText: {
+    fontSize: 18,
     fontWeight: '600',
+    color: '#2c3e50',
   },
-  errorInfoText: {
+  errorHeaderText: {
     fontSize: 16,
-    color: '#dc3545',
+    color: '#e74c3c',
     fontWeight: '600',
-    marginTop: 4,
-  },
-  tableContainer: {
-    marginBottom: 16,
-  },
-  tableBorder: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
   },
   tableHeader: {
     flexDirection: 'row',
@@ -762,112 +738,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   tableHeaderText: {
-    flex: 1,
     fontWeight: 'bold',
     textAlign: 'center',
     color: '#003366',
-    paddingHorizontal: 8,
-  },
-  tableCellText: {
-    textAlign: 'center',
   },
   tableRow: {
     flexDirection: 'row',
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
-    backgroundColor: '#ffffff',
   },
   tableCell: {
-    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+  },
+  tableCellText: {
     textAlign: 'center',
-    paddingHorizontal: 8,
-    fontSize: 14,
-  },
-  tableRowText: {
-    padding: 8,
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  toggleButton: {
-    backgroundColor: '#e0e0e0',
-    padding: 8,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-    marginTop: 8,
-  },
-  toggleButtonText: {
-    color: '#333',
-    fontSize: 14,
   },
   submitButton: {
-    backgroundColor: '#003366',
+    backgroundColor: '#2ecc71',
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 16,
   },
   submitButtonText: {
-    color: '#ffffff',
+    color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },
-  disabledButton: {
-    backgroundColor: '#cccccc',
-  },
-  progressContainer: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  progressText: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  successText: {
-    fontSize: 14,
-    color: '#28a745',
-  },
-  failText: {
-    fontSize: 14,
-    color: '#dc3545',
-  },
-  noErrorsText: {
-    textAlign: 'center',
-    color: '#28a745',
-    fontSize: 16,
-    marginVertical: 16,
-  },
-  
-    errorContainer: {
-      marginTop: 16,
-      padding: 12,
-      backgroundColor: '#fff3f3',
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: '#ffcccc',
-    },
-    errorTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: '#dc3545',
-      marginBottom: 8,
-    },
-    errorItem: {
-      marginBottom: 4,
-    },
-    errorText: {
-      fontSize: 14,
-      color: '#dc3545',
-    },
-    errorBold: {
-      fontWeight: 'bold',
-    },
-  
 });
-
 
 export default ImportResident;
