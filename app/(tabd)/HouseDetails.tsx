@@ -66,7 +66,7 @@ const HouseDetails: React.FC = () => {
           throw new Error('User token not found');
         }
 
-        const response = await fetch(`${API_URL}/government/housedetails`, {
+        const response = await fetch(`${API_URL}/department/housedetails`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

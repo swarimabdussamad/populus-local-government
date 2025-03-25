@@ -8,7 +8,10 @@ import {
   Platform,
   StatusBar,
   ActivityIndicator,
-  Alert
+  Alert,
+  TextInput,
+  Modal,
+  ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -45,6 +48,14 @@ const DepartmentProfile = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [changePasswordModal, setChangePasswordModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const router = useRouter();
 
   const getUserIdFromToken = async (): Promise<string | null> => {
@@ -78,26 +89,98 @@ const DepartmentProfile = () => {
         throw new Error(errorData.message || 'Failed to fetch profile');
       }
 
-       const responseData = await response.json();
-    console.log('Full response data:', responseData);
+      const responseData = await response.json();
+      console.log('Full response data:', responseData);
 
-    // Extract data from the nested structure
-    const data = responseData.data;
+      // Extract data from the nested structure
+      const data = responseData.data;
 
-    setProfileData({
-      departmentName: data.departmentName || '',
-      accessAreas: data.accessAreas || [],
-      email: data.email || '',
-      username: data.username || '',
-      district: data.district || '',
-      phone: data.phone || ''
-    });
+      setProfileData({
+        departmentName: data.departmentName || '',
+        accessAreas: data.accessAreas || [],
+        email: data.email || '',
+        username: data.username || '',
+        district: data.district || '',
+        phone: data.phone || ''
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load profile data';
       setError(message);
       console.error('Error fetching profile:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    const { currentPassword, newPassword, confirmPassword } = passwordData;
+    
+    // Basic validation
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError('All fields are required');
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match');
+      return;
+    }
+    
+    setPasswordError(null);
+    setIsUpdatingPassword(true);
+    
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        throw new Error('Authentication required. Please login again.');
+      }
+      
+      const response = await fetch(`${API_URL}/department/update-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword
+        })
+      });
+      
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(responseData.message || 'Failed to update password');
+      }
+      
+      Alert.alert(
+        'Success', 
+        'Password updated successfully. A confirmation email has been sent to your registered email address.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setChangePasswordModal(false);
+              setPasswordData({
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: ''
+              });
+            }
+          }
+        ]
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update password';
+      setPasswordError(message);
+      console.error('Error updating password:', err);
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -162,82 +245,164 @@ const DepartmentProfile = () => {
         <Text style={styles.headerTitle}>Department Profile</Text>
       </View>
 
-      {profileData && (
-        <>
-          <View style={styles.profileOverview}>
-            <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarText}>
-              {profileData.departmentName?.charAt(0)?.toUpperCase() || 'D'}
-              </Text>
-            </View>
-            <Text style={styles.profileName}>{profileData.departmentName}</Text>
-          </View>
-
-          <View style={styles.detailsContainer}>
-            <View style={styles.profileSection}>
-              <View style={styles.sectionIcon}>
-                <Ionicons name="person-outline" size={24} color="#1e3a8a" />
-              </View>
-              <View style={styles.sectionContent}>
-                <Text style={styles.sectionTitle}>Username</Text>
-                <Text style={styles.sectionSubtitle}>{profileData.username}</Text>
-              </View>
-            </View>
-
-            <View style={styles.profileSection}>
-              <View style={styles.sectionIcon}>
-                <Ionicons name="mail-outline" size={24} color="#1e3a8a" />
-              </View>
-              <View style={styles.sectionContent}>
-                <Text style={styles.sectionTitle}>Email</Text>
-                <Text style={styles.sectionSubtitle}>{profileData.email}</Text>
-              </View>
-            </View>
-
-            <View style={styles.profileSection}>
-              <View style={styles.sectionIcon}>
-                <Ionicons name="call-outline" size={24} color="#1e3a8a" />
-              </View>
-              <View style={styles.sectionContent}>
-                <Text style={styles.sectionTitle}>Phone</Text>
-                <Text style={styles.sectionSubtitle}>{profileData.phone}</Text>
-              </View>
-            </View>
-
-            <View style={styles.profileSection}>
-              <View style={styles.sectionIcon}>
-                <Ionicons name="location-outline" size={24} color="#1e3a8a" />
-              </View>
-              <View style={styles.sectionContent}>
-                <Text style={styles.sectionTitle}>District</Text>
-                <Text style={styles.sectionSubtitle}>{profileData.district}</Text>
-              </View>
-            </View>
-
-            <View style={styles.profileSection}>
-              <View style={styles.sectionIcon}>
-                <Ionicons name="map-outline" size={24} color="#1e3a8a" />
-              </View>
-              <View style={styles.sectionContent}>
-                <Text style={styles.sectionTitle}>Access Areas</Text>
-                <Text style={styles.sectionSubtitle}>
-                {profileData.accessAreas.join(', ') || 'None specified'}
+      <ScrollView>
+        {profileData && (
+          <>
+            <View style={styles.profileOverview}>
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>
+                {profileData.departmentName?.charAt(0)?.toUpperCase() || 'D'}
                 </Text>
               </View>
+              <Text style={styles.profileName}>{profileData.departmentName}</Text>
+            </View>
+
+            <View style={styles.detailsContainer}>
+              <View style={styles.profileSection}>
+                <View style={styles.sectionIcon}>
+                  <Ionicons name="person-outline" size={24} color="#1e3a8a" />
+                </View>
+                <View style={styles.sectionContent}>
+                  <Text style={styles.sectionTitle}>Username</Text>
+                  <Text style={styles.sectionSubtitle}>{profileData.username}</Text>
+                </View>
+              </View>
+
+              <View style={styles.profileSection}>
+                <View style={styles.sectionIcon}>
+                  <Ionicons name="mail-outline" size={24} color="#1e3a8a" />
+                </View>
+                <View style={styles.sectionContent}>
+                  <Text style={styles.sectionTitle}>Email</Text>
+                  <Text style={styles.sectionSubtitle}>{profileData.email}</Text>
+                </View>
+              </View>
+
+              <View style={styles.profileSection}>
+                <View style={styles.sectionIcon}>
+                  <Ionicons name="call-outline" size={24} color="#1e3a8a" />
+                </View>
+                <View style={styles.sectionContent}>
+                  <Text style={styles.sectionTitle}>Phone</Text>
+                  <Text style={styles.sectionSubtitle}>{profileData.phone}</Text>
+                </View>
+              </View>
+
+              <View style={styles.profileSection}>
+                <View style={styles.sectionIcon}>
+                  <Ionicons name="location-outline" size={24} color="#1e3a8a" />
+                </View>
+                <View style={styles.sectionContent}>
+                  <Text style={styles.sectionTitle}>District</Text>
+                  <Text style={styles.sectionSubtitle}>{profileData.district}</Text>
+                </View>
+              </View>
+
+              <View style={styles.profileSection}>
+                <View style={styles.sectionIcon}>
+                  <Ionicons name="map-outline" size={24} color="#1e3a8a" />
+                </View>
+                <View style={styles.sectionContent}>
+                  <Text style={styles.sectionTitle}>Access Areas</Text>
+                  <Text style={styles.sectionSubtitle}>
+                  {profileData.accessAreas.join(', ') || 'None specified'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.actionContainer}>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => setChangePasswordModal(true)}
+              >
+                <Ionicons name="key-outline" size={20} color="#1e3a8a" />
+                <Text style={styles.actionButtonText}>Change Password</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.actionButton, { borderColor: '#fee2e2' }]}
+                onPress={handleLogout}
+              >
+                <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+                <Text style={[styles.actionButtonText, { color: '#ef4444' }]}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+      </ScrollView>
+
+      {/* Change Password Modal */}
+      <Modal
+        visible={changePasswordModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setChangePasswordModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Change Password</Text>
+            
+            {passwordError && (
+              <Text style={styles.errorText}>{passwordError}</Text>
+            )}
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Current Password"
+              secureTextEntry
+              value={passwordData.currentPassword}
+              onChangeText={(text) => setPasswordData({...passwordData, currentPassword: text})}
+            />
+            
+            <TextInput
+              style={styles.input}
+              placeholder="New Password"
+              secureTextEntry
+              value={passwordData.newPassword}
+              onChangeText={(text) => setPasswordData({...passwordData, newPassword: text})}
+            />
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm New Password"
+              secureTextEntry
+              value={passwordData.confirmPassword}
+              onChangeText={(text) => setPasswordData({...passwordData, confirmPassword: text})}
+            />
+            
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setChangePasswordModal(false);
+                  setPasswordError(null);
+                  setPasswordData({
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmPassword: ''
+                  });
+                }}
+                disabled={isUpdatingPassword}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={handlePasswordChange}
+                disabled={isUpdatingPassword}
+              >
+                {isUpdatingPassword ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Save</Text>
+                )}
+              </TouchableOpacity>
             </View>
           </View>
-
-          <View style={styles.actionContainer}>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={handleLogout}
-            >
-              <Ionicons name="log-out-outline" size={20} color="#ef4444" />
-              <Text style={[styles.actionButtonText, { color: '#ef4444' }]}>Logout</Text>
-            </TouchableOpacity>
-          </View>
-        </>
-      )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -387,6 +552,63 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: 'white',
     fontSize: 16,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '90%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#1e293b',
+    textAlign: 'center',
+  },
+  input: {
+    height: 50,
+    borderColor: '#e2e8f0',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    backgroundColor: '#f8fafc',
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#f1f5f9',
+    marginRight: 10,
+  },
+  saveButton: {
+    backgroundColor: '#1e3a8a',
+    marginLeft: 10,
+  },
+  cancelButtonText: {
+    color: '#64748b',
+    fontWeight: 'bold',
+  },
+  saveButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 

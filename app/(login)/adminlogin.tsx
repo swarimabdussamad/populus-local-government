@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { router } from 'expo-router';
+import { API_URL } from '@/constants/constants';
 
 // Define the RootParamList type
 type RootParamList = {
@@ -12,24 +13,48 @@ type RootParamList = {
 
 const Login = () => {
   const navigation = useNavigation<StackNavigationProp<RootParamList>>();
-
-  // State for input fields
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Handle login
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!username || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    // Add your login logic here (e.g., API call to authenticate)
-    console.log('Username:', username);
-    console.log('Password:', password);
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch(`${API_URL}/government/admin_login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username,
+          password
+        }),
+      });
 
-    // Navigate to the dashboard on successful login
-    router.push('/(admin)/dashboard')
+      const data = await response.json();
+
+      if (response.ok) {
+        // Successful login
+        // You might want to store the auth token if your backend returns one
+        // await SecureStore.setItemAsync('authToken', data.token);
+        router.push('/(admin)/dashboard');
+      } else {
+        // Failed login
+        Alert.alert('Error', data.message || 'Invalid credentials');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      Alert.alert('Error', 'An error occurred during login. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -45,6 +70,7 @@ const Login = () => {
           placeholderTextColor="#999"
           value={username}
           onChangeText={setUsername}
+          autoCapitalize="none"
         />
 
         {/* Password Input */}
@@ -55,11 +81,18 @@ const Login = () => {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          autoCapitalize="none"
         />
 
         {/* Login Button */}
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>Login</Text>
+        <TouchableOpacity 
+          style={[styles.loginButton, isLoading && styles.disabledButton]} 
+          onPress={handleLogin}
+          disabled={isLoading}
+        >
+          <Text style={styles.loginButtonText}>
+            {isLoading ? 'Logging in...' : 'Login'}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -108,6 +141,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  disabledButton: {
+    backgroundColor: '#7a7a9e',
   },
   loginButtonText: {
     color: '#fff',

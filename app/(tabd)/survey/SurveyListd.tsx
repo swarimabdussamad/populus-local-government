@@ -186,7 +186,7 @@ const Survey = () => {
         return;
       }
 
-      const response = await fetch(`${API_URL}/government/mysurvey`, {
+      const response = await fetch(`${API_URL}/department/mysurvey`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

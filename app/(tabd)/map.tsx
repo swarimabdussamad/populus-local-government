@@ -56,7 +56,7 @@ function Map() {
 
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/government/map`, {
+        const response = await fetch(`${API_URL}/department/map`, {
           method: 'POST',
           headers: {
             "Content-Type": "application/json",
