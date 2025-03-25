@@ -51,7 +51,6 @@ const DISTRICTS = ["PALAKKAD", "MALAPPURAM"];
 // Define the shape of the form data
 interface FormData {
   departmentName: string;
-  username: string;
   accessAreas: string[];
   email: string;
   phone: string;
@@ -60,7 +59,6 @@ interface FormData {
 
 interface Errors {
   departmentName?: string;
-  username?: string;
   accessAreas?: string;
   email?: string;
   phone?: string;
@@ -71,7 +69,6 @@ const addDept = () => {
   const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     departmentName: "",
-    username: "",
     accessAreas: [],
     email: "",
     phone: "",
@@ -92,7 +89,6 @@ const addDept = () => {
   const handleSignUp = async () => {
     const newErrors: Errors = {};
     if (!formData.departmentName) newErrors.departmentName = "Department name is required";
-    if (!formData.username) newErrors.username = "Username is required";
     if (formData.accessAreas.length === 0) newErrors.accessAreas = "At least one access area is required";
     if (!formData.email) newErrors.email = "Email is required";
     if (!formData.phone) newErrors.phone = "Phone number is required";
@@ -105,7 +101,7 @@ const addDept = () => {
       Alert.alert("Validation Error", "Please fill in all required fields correctly");
       return;
     }
-
+    console.log(formData);
     try {
       const response = await fetch(`${API_URL}/department/signup`, {
         method: "POST",
@@ -114,7 +110,7 @@ const addDept = () => {
         },
         body: JSON.stringify(formData),
       });
-
+      console.log(response);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Sign-up failed");
@@ -170,19 +166,7 @@ const addDept = () => {
             {errors.departmentName && <Text style={styles.errorText}>{errors.departmentName}</Text>}
           </View>
 
-          {/* Username */}
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={[styles.input, errors.username && styles.inputError]}
-              placeholder="Username"
-              value={formData.username}
-              onChangeText={(text) => handleInputChange("username", text)}
-              placeholderTextColor="#666"
-              autoCapitalize="none"
-            />
-            {errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
-          </View>
-  
+         
           {/* District Dropdown */}
           <View style={styles.pickerContainer}>
             <Picker
