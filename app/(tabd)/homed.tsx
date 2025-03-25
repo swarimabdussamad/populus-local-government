@@ -10,24 +10,21 @@ import {
   Image,
   SafeAreaView,
   StatusBar,
-  Platform,
   ActivityIndicator,
   Alert,
   Pressable,
-  RefreshControl,
 } from 'react-native';
-import { PermissionsAndroid} from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { API_URL } from '@/constants/constants';
-import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
+import WeatherCard from '../../components/WeatherCarddep'; // Adjust path as needed
+import { WeatherContext } from './_layout';
 import styles from "@/app/(tabs)/Styles/homestyle";
-import { launchImageLibrary, ImageLibraryOptions, MediaType, ImagePickerResponse } from 'react-native-image-picker';
+import { ImageLibraryOptions, MediaType } from 'react-native-image-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Linking } from 'react-native';
-import Feather from 'react-native-vector-icons/Feather';
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -392,7 +389,8 @@ const HomeDepartment = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
-  const [userDepartment, setUserDepartment] = useState<string | null>(null); 
+  const [userDepartment, setUserDepartment] = useState<string | null>(null);
+  const { weatherData } = useContext(WeatherContext); 
   
   const [newPost, setNewPost] = useState({
     department: '',

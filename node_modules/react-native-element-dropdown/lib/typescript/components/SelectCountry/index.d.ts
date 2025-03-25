@@ -1,5 +1,5 @@
-import { ReactElement, JSXElementConstructor } from 'react';
-import { SelectCountryProps } from './model';
-declare const SelectCountryComponent: <T>(props: SelectCountryProps<T>) => ReactElement<any, string | JSXElementConstructor<any>> | null;
+import React from 'react';
+import { ISelectCountryRef, SelectCountryProps } from './model';
+declare const SelectCountryComponent: React.ForwardRefExoticComponent<Pick<SelectCountryProps<any>, "fontFamily" | "testID" | "maxHeight" | "minHeight" | "backgroundColor" | "style" | "value" | "placeholder" | "iconStyle" | "onChangeText" | "renderLeftIcon" | "renderRightIcon" | "onBlur" | "onFocus" | "accessibilityLabel" | "onChange" | "search" | "renderItem" | "data" | "inverted" | "showsVerticalScrollIndicator" | "itemTestIDField" | "containerStyle" | "placeholderStyle" | "selectedTextStyle" | "selectedTextProps" | "itemContainerStyle" | "itemTextStyle" | "inputSearchStyle" | "iconColor" | "activeColor" | "labelField" | "valueField" | "searchField" | "searchPlaceholder" | "searchPlaceholderTextColor" | "disable" | "autoScroll" | "dropdownPosition" | "flatListProps" | "keyboardAvoiding" | "confirmSelectItem" | "itemAccessibilityLabelField" | "mode" | "closeModalWhenSelectedItem" | "excludeItems" | "excludeSearchItems" | "renderInputSearch" | "searchQuery" | "onConfirmSelectItem" | "imageField" | "imageStyle"> & React.RefAttributes<ISelectCountryRef>>;
 export default SelectCountryComponent;
 //# sourceMappingURL=index.d.ts.map

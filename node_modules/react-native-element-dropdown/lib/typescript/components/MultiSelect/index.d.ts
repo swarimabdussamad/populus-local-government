@@ -1,5 +1,5 @@
-import { JSXElementConstructor, ReactElement } from 'react';
-import { MultiSelectProps } from './model';
-declare const MultiSelectComponent: <T>(props: MultiSelectProps<T>) => ReactElement<any, string | JSXElementConstructor<any>> | null;
+import React from 'react';
+import { IMultiSelectRef, MultiSelectProps } from './model';
+declare const MultiSelectComponent: React.ForwardRefExoticComponent<Pick<MultiSelectProps<any>, "fontFamily" | "testID" | "maxHeight" | "minHeight" | "backgroundColor" | "style" | "value" | "placeholder" | "iconStyle" | "onChangeText" | "renderLeftIcon" | "renderRightIcon" | "onBlur" | "onFocus" | "accessibilityLabel" | "onChange" | "search" | "renderItem" | "data" | "inverted" | "showsVerticalScrollIndicator" | "itemTestIDField" | "containerStyle" | "placeholderStyle" | "selectedTextStyle" | "selectedTextProps" | "itemContainerStyle" | "itemTextStyle" | "inputSearchStyle" | "iconColor" | "activeColor" | "labelField" | "valueField" | "searchField" | "searchPlaceholder" | "searchPlaceholderTextColor" | "disable" | "dropdownPosition" | "flatListProps" | "keyboardAvoiding" | "confirmSelectItem" | "itemAccessibilityLabelField" | "mode" | "excludeItems" | "excludeSearchItems" | "renderInputSearch" | "searchQuery" | "onConfirmSelectItem" | "alwaysRenderSelectedItem" | "visibleSelectedItem" | "selectedStyle" | "maxSelect" | "inside" | "confirmUnSelectItem" | "renderSelectedItem"> & React.RefAttributes<IMultiSelectRef>>;
 export default MultiSelectComponent;
 //# sourceMappingURL=index.d.ts.map

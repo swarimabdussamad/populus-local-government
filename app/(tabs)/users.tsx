@@ -45,15 +45,40 @@ const router = useRouter();
   const fetchUnverifiedUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/government/users`);
+    
+      // Retrieve current username from AsyncStorage
+      const currentUsername = await AsyncStorage.getItem('currentUsername');
+    
+      if (!currentUsername) {
+        Alert.alert('Error', 'No username found. Please log in again.');
+        setLoading(false);
+        return;
+      }
+
+      // Make the fetch request with the username in headers
+      const response = await fetch(`${API_URL}/government/users`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-username': currentUsername
+        }
+      });
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+    
       const data = await response.json();
       setUsers(data);
     } catch (error) {
       console.error('Error fetching unverified users:', error);
-      Alert.alert('Error', 'Failed to fetch users. Please try again.');
+    
+      // Handle different types of errors
+      if (error.message.includes('Failed to fetch')) {
+        Alert.alert('Network Error', 'Please check your internet connection.');
+      } else {
+        Alert.alert('Error', 'Failed to fetch users. Please try again.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -287,7 +312,7 @@ const router = useRouter();
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Local Body:</Text>
-            <Text style={styles.detailValue}>{item.localBody || 'N/A'}</Text>
+            <Text style={styles.detailValue}>{item.locality || 'N/A'}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Self Gov Type:</Text>
