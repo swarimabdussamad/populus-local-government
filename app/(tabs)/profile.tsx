@@ -7,36 +7,68 @@ import {
   TouchableOpacity, 
   Platform,
   StatusBar,
-  Image,
-  Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '@/constants/constants';
 import { useRouter } from 'expo-router';
+import { Alert } from 'react-native';
+
+interface LocalGovernmentProfile {
+  _id: string;
+  selfGovType: string;
+  district: string;
+  locality: string;
+  email: string;
+  phone: string;
+  username: string;
+  createdAt: string;
+}
 
 const Profile = () => {
-  const [profileData, setProfileData] = useState(null);
+  const [profileData, setProfileData] = useState<LocalGovernmentProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const fetchProfileData = async () => {
     try {
       const username = await AsyncStorage.getItem('currentUsername');
-      console.log(username);
-      const response = await fetch(`${API_URL}/government/profile/${username}`);
+      const token = await AsyncStorage.getItem('userToken');
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch profile');
+      if (!username || !token) {
+        throw new Error('Authentication required');
       }
 
-      const data = await response.json();
-      setProfileData(data);
-      console.log(data);
+      const response = await fetch(`${API_URL}/government/profile/${username}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+            
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const { data } = await response.json();
+      
+      const transformedData: LocalGovernmentProfile = {
+        _id: data._id,
+        selfGovType: data.selfGovType,
+        district: data.district,
+        locality: data.locality,
+        email: data.email,
+        phone: data.phone,
+        username: data.username,
+        createdAt: data.createdAt
+      };
+
+      setProfileData(transformedData);
     } catch (error) {
       console.error('Error fetching profile:', error);
-      Alert.alert('Error', 'Failed to load profile data');
+      setError(error instanceof Error ? error.message : 'Failed to load profile data');
     } finally {
       setLoading(false);
     }
@@ -60,8 +92,7 @@ const Profile = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.removeItem('userToken');
-              await AsyncStorage.removeItem('currentUsername');
+              await AsyncStorage.multiRemove(['userToken', 'currentUsername']);
               router.replace('/login');
             } catch (error) {
               console.error('Logout error:', error);
@@ -73,10 +104,38 @@ const Profile = () => {
     );
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#1e3a8a" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity onPress={fetchProfileData}>
+          <Text style={styles.retryText}>Try Again</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!profileData) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text>No profile data available</Text>
       </View>
     );
   }
@@ -86,85 +145,119 @@ const Profile = () => {
       <StatusBar backgroundColor="#1e3a8a" barStyle="light-content" />
       
       <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>Profile</Text>
+        <Text style={styles.headerTitle}>Government Profile</Text>
       </View>
-
-      {profileData && (
-        <>
-          <View style={styles.profileOverview}>
-            <View style={styles.avatarContainer}>
-              {profileData.photo ? (
-                <Image source={{ uri: profileData.photo }} style={styles.avatar} />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Text style={styles.avatarText}>
-                    {profileData.fullName?.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-              )}
-            </View>
-            <Text style={styles.profileName}>{profileData.fullName}</Text>
-            <Text style={styles.profileRole}>{profileData.selfGovType || 'Local Government'}</Text>
+  
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.profileOverview}>
+          <View style={styles.avatarPlaceholder}>
+            <Text style={styles.avatarText}>
+              {profileData.selfGovType?.charAt(0)?.toUpperCase() || 'G'}
+            </Text>
           </View>
-
-          <View style={styles.detailsContainer}>
-            <View style={styles.profileSection}>
-              <View style={styles.sectionIcon}>
-                <Ionicons name="person-outline" size={24} color="#1e3a8a" />
-              </View>
-              <View style={styles.sectionContent}>
-                <Text style={styles.sectionTitle}>Username</Text>
-                <Text style={styles.sectionSubtitle}>{profileData.username}</Text>
-              </View>
+          <Text style={styles.profileName}>{profileData.selfGovType}</Text>
+          <Text style={styles.profileRole}>{profileData.district}</Text>
+        </View>
+  
+        <View style={styles.detailsContainer}>
+          <View style={styles.profileSection}>
+            <View style={styles.sectionIcon}>
+              <Ionicons name="person-outline" size={24} color="#1e3a8a" />
             </View>
-
-            <View style={styles.profileSection}>
-              <View style={styles.sectionIcon}>
-                <Ionicons name="mail-outline" size={24} color="#1e3a8a" />
-              </View>
-              <View style={styles.sectionContent}>
-                <Text style={styles.sectionTitle}>Email</Text>
-                <Text style={styles.sectionSubtitle}>{profileData.email}</Text>
-              </View>
-            </View>
-
-            <View style={styles.profileSection}>
-              <View style={styles.sectionIcon}>
-                <Ionicons name="call-outline" size={24} color="#1e3a8a" />
-              </View>
-              <View style={styles.sectionContent}>
-                <Text style={styles.sectionTitle}>Phone</Text>
-                <Text style={styles.sectionSubtitle}>{profileData.mobile}</Text>
-              </View>
-            </View>
-
-            <View style={styles.profileSection}>
-              <View style={styles.sectionIcon}>
-                <Ionicons name="location-outline" size={24} color="#1e3a8a" />
-              </View>
-              <View style={styles.sectionContent}>
-                <Text style={styles.sectionTitle}>District</Text>
-                <Text style={styles.sectionSubtitle}>{profileData.district}</Text>
-              </View>
+            <View style={styles.sectionContent}>
+              <Text style={styles.sectionTitle}>Username</Text>
+              <Text style={styles.sectionSubtitle}>{profileData.username}</Text>
             </View>
           </View>
-
-          <View style={styles.actionContainer}>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={handleLogout}
-            >
-              <Ionicons name="log-out-outline" size={20} color="#ef4444" />
-              <Text style={[styles.actionButtonText, { color: '#ef4444' }]}>Logout</Text>
-            </TouchableOpacity>
+  
+          <View style={styles.profileSection}>
+            <View style={styles.sectionIcon}>
+              <Ionicons name="mail-outline" size={24} color="#1e3a8a" />
+            </View>
+            <View style={styles.sectionContent}>
+              <Text style={styles.sectionTitle}>Email</Text>
+              <Text style={styles.sectionSubtitle}>{profileData.email}</Text>
+            </View>
           </View>
-        </>
-      )}
+  
+          <View style={styles.profileSection}>
+            <View style={styles.sectionIcon}>
+              <Ionicons name="call-outline" size={24} color="#1e3a8a" />
+            </View>
+            <View style={styles.sectionContent}>
+              <Text style={styles.sectionTitle}>Phone</Text>
+              <Text style={styles.sectionSubtitle}>{profileData.phone || 'Not provided'}</Text>
+            </View>
+          </View>
+  
+          <View style={styles.profileSection}>
+            <View style={styles.sectionIcon}>
+              <Ionicons name="location-outline" size={24} color="#1e3a8a" />
+            </View>
+            <View style={styles.sectionContent}>
+              <Text style={styles.sectionTitle}>District</Text>
+              <Text style={styles.sectionSubtitle}>{profileData.district || 'Not specified'}</Text>
+            </View>
+          </View>
+  
+          <View style={styles.profileSection}>
+            <View style={styles.sectionIcon}>
+              <Ionicons name="home-outline" size={24} color="#1e3a8a" />
+            </View>
+            <View style={styles.sectionContent}>
+              <Text style={styles.sectionTitle}>Locality</Text>
+              <Text style={styles.sectionSubtitle}>{profileData.locality || 'Not specified'}</Text>
+            </View>
+          </View>
+  
+          <View style={styles.profileSection}>
+            <View style={styles.sectionIcon}>
+              <Ionicons name="calendar-outline" size={24} color="#1e3a8a" />
+            </View>
+            <View style={styles.sectionContent}>
+              <Text style={styles.sectionTitle}>Member Since</Text>
+              <Text style={styles.sectionSubtitle}>{formatDate(profileData.createdAt)}</Text>
+            </View>
+          </View>
+        </View>
+  
+        <View style={styles.actionContainer}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={handleLogout}
+          >
+            <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+            <Text style={[styles.actionButtonText, { color: '#ef4444' }]}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: 20, // Add some padding at the bottom
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  retryText: {
+    color: '#1e3a8a',
+    fontWeight: 'bold',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

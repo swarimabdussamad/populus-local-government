@@ -13,7 +13,7 @@ import {
 import { Picker } from "@react-native-picker/picker";
 import { API_URL } from "../../constants/constants";
 import { useRouter } from "expo-router";
-import MultiSelect from "react-native-multiple-select"; // Install this library
+import MultiSelect from "react-native-multiple-select";
 
 // List of predefined departments with full names
 const DEPARTMENTS = [
@@ -36,11 +36,8 @@ const SELF_GOVERNMENT_TYPES = ["Panchayath", "Municipality"];
 const PALAKKAD_LOCAL_BODIES = {
   Panchayath: [
     "SREEKRISHNAPURAM",
-
     "KARIMPUZHA",
-
     "MALAMPUZHA",
-
     "MUNDUR",
   ],
   Municipality: [
@@ -48,21 +45,22 @@ const PALAKKAD_LOCAL_BODIES = {
     "MANNARKKAD",
     "CHERPULASSERY",
     "PATTAMBI",
-  ],
+  ],
 };
 const DISTRICTS = ["PALAKKAD", "MALAPPURAM"];
 // Define the shape of the form data
 interface FormData {
   departmentName: string;
+  username: string;
   accessAreas: string[];
   email: string;
   phone: string;
   district: string;
 }
 
-// Define the shape of the errors object
 interface Errors {
   departmentName?: string;
+  username?: string;
   accessAreas?: string;
   email?: string;
   phone?: string;
@@ -73,6 +71,7 @@ const addDept = () => {
   const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     departmentName: "",
+    username: "",
     accessAreas: [],
     email: "",
     phone: "",
@@ -93,6 +92,7 @@ const addDept = () => {
   const handleSignUp = async () => {
     const newErrors: Errors = {};
     if (!formData.departmentName) newErrors.departmentName = "Department name is required";
+    if (!formData.username) newErrors.username = "Username is required";
     if (formData.accessAreas.length === 0) newErrors.accessAreas = "At least one access area is required";
     if (!formData.email) newErrors.email = "Email is required";
     if (!formData.phone) newErrors.phone = "Phone number is required";
@@ -134,7 +134,6 @@ const addDept = () => {
     }
   };
 
-  // Prepare data for MultiSelect
   const accessAreasOptions = [...PALAKKAD_LOCAL_BODIES.Panchayath, ...PALAKKAD_LOCAL_BODIES.Municipality].map((locality) => ({
     id: locality,
     name: locality,
@@ -169,6 +168,19 @@ const addDept = () => {
               ))}
             </Picker>
             {errors.departmentName && <Text style={styles.errorText}>{errors.departmentName}</Text>}
+          </View>
+
+          {/* Username */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={[styles.input, errors.username && styles.inputError]}
+              placeholder="Username"
+              value={formData.username}
+              onChangeText={(text) => handleInputChange("username", text)}
+              placeholderTextColor="#666"
+              autoCapitalize="none"
+            />
+            {errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
           </View>
   
           {/* District Dropdown */}
@@ -220,6 +232,7 @@ const addDept = () => {
               onChangeText={(text) => handleInputChange("email", text)}
               keyboardType="email-address"
               placeholderTextColor="#666"
+              autoCapitalize="none"
             />
             {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
           </View>

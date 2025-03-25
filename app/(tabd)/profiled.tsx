@@ -78,20 +78,20 @@ const DepartmentProfile = () => {
         throw new Error(errorData.message || 'Failed to fetch profile');
       }
 
-      const responseData = await response.json();
-      console.log('Full response data:', responseData);
-  
-      // Extract data from the nested structure
-      const data = responseData.data;
-  
-      setProfileData({
-        departmentName: data.departmentName || '',
-        accessAreas: data.accessAreas || [],
-        email: data.email || '',
-        username: data.username || '',
-        district: data.district || '',
-        phone: data.phone || ''
-      });
+       const responseData = await response.json();
+    console.log('Full response data:', responseData);
+
+    // Extract data from the nested structure
+    const data = responseData.data;
+
+    setProfileData({
+      departmentName: data.departmentName || '',
+      accessAreas: data.accessAreas || [],
+      email: data.email || '',
+      username: data.username || '',
+      district: data.district || '',
+      phone: data.phone || ''
+    });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load profile data';
       setError(message);
