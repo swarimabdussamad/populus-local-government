@@ -35,7 +35,14 @@ interface DepartmentProfile {
 }
 
 const DepartmentProfile = () => {
-  const [profileData, setProfileData] = useState<DepartmentProfile | null>(null);
+  const [profileData, setProfileData] = useState({
+    departmentName: '',
+    accessAreas: [], // Initialize as empty array
+    email: '',
+    username: '',
+    district: '',
+    phone: ''
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -46,6 +53,7 @@ const DepartmentProfile = () => {
       if (!token) return null;
       
       const decoded: DecodedToken = jwtDecode(token);
+      console.log(decoded.userId);
       return decoded.userId;
     } catch (error) {
       console.error('Error decoding token:', error);
@@ -70,8 +78,20 @@ const DepartmentProfile = () => {
         throw new Error(errorData.message || 'Failed to fetch profile');
       }
 
-      const data: DepartmentProfile = await response.json();
-      setProfileData(data);
+      const responseData = await response.json();
+      console.log('Full response data:', responseData);
+  
+      // Extract data from the nested structure
+      const data = responseData.data;
+  
+      setProfileData({
+        departmentName: data.departmentName || '',
+        accessAreas: data.accessAreas || [],
+        email: data.email || '',
+        username: data.username || '',
+        district: data.district || '',
+        phone: data.phone || ''
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load profile data';
       setError(message);
@@ -147,7 +167,7 @@ const DepartmentProfile = () => {
           <View style={styles.profileOverview}>
             <View style={styles.avatarPlaceholder}>
               <Text style={styles.avatarText}>
-                {profileData.departmentName.charAt(0).toUpperCase()}
+              {profileData.departmentName?.charAt(0)?.toUpperCase() || 'D'}
               </Text>
             </View>
             <Text style={styles.profileName}>{profileData.departmentName}</Text>
@@ -201,7 +221,7 @@ const DepartmentProfile = () => {
               <View style={styles.sectionContent}>
                 <Text style={styles.sectionTitle}>Access Areas</Text>
                 <Text style={styles.sectionSubtitle}>
-                  {profileData.accessAreas.join(', ')}
+                {profileData.accessAreas.join(', ') || 'None specified'}
                 </Text>
               </View>
             </View>
