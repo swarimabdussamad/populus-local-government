@@ -1,5 +1,5 @@
-import { JSXElementConstructor, ReactElement } from 'react';
-import { DropdownProps } from './model';
-declare const DropdownComponent: <T>(props: DropdownProps<T>) => ReactElement<any, string | JSXElementConstructor<any>> | null;
+import React from 'react';
+import { DropdownProps, IDropdownRef } from './model';
+declare const DropdownComponent: React.ForwardRefExoticComponent<Pick<DropdownProps<any>, "fontFamily" | "testID" | "maxHeight" | "minHeight" | "backgroundColor" | "style" | "value" | "placeholder" | "iconStyle" | "onChangeText" | "renderLeftIcon" | "renderRightIcon" | "onBlur" | "onFocus" | "accessibilityLabel" | "onChange" | "search" | "renderItem" | "data" | "inverted" | "showsVerticalScrollIndicator" | "itemTestIDField" | "containerStyle" | "placeholderStyle" | "selectedTextStyle" | "selectedTextProps" | "itemContainerStyle" | "itemTextStyle" | "inputSearchStyle" | "iconColor" | "activeColor" | "labelField" | "valueField" | "searchField" | "searchPlaceholder" | "searchPlaceholderTextColor" | "disable" | "autoScroll" | "dropdownPosition" | "flatListProps" | "keyboardAvoiding" | "confirmSelectItem" | "itemAccessibilityLabelField" | "mode" | "closeModalWhenSelectedItem" | "excludeItems" | "excludeSearchItems" | "renderInputSearch" | "searchQuery" | "onConfirmSelectItem"> & React.RefAttributes<IDropdownRef>>;
 export default DropdownComponent;
 //# sourceMappingURL=index.d.ts.map

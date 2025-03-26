@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { StyleSheet, Text, View, SafeAreaView, Alert, TextInput, TouchableOpacity, ActivityIndicator, Linking, ScrollView } from 'react-native';
 import * as Location from 'expo-location';
-
+import { WeatherContext } from '@/app/(tabd)/_layout';
 // Enhanced Kerala districts with regional characteristics
 const KERALA_DISTRICTS = [
   { name: 'Thiruvananthapuram', lat: 8.5241, lon: 76.9366, elevation: 3, region: 'Coastal' },
@@ -49,7 +49,7 @@ const THRESHOLDS = {
   }
 };
 
-// Enhanced weather codes with Kerala-specific conditions
+//Enhanced weather codes with Kerala-specific conditions
 const WEATHER_CODES = {
   0: { description: 'Clear sky', icon: '☀️', keralaNote: 'Typical summer day' },
   1: { description: 'Mainly clear', icon: '🌤️', keralaNote: 'Pleasant weather' },
@@ -65,7 +65,10 @@ const WEATHER_CODES = {
 };
 
 const Weather = () => {
-  const [weatherData, setWeatherData] = useState(null);
+  // const [weatherData, setWeatherData] = useState(null);
+  const { weatherData, setWeatherData } = useContext(WeatherContext);
+
+
   const [loading, setLoading] = useState(true);
   const [location, setLocation] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -182,7 +185,7 @@ const Weather = () => {
     }
   };
 
-  const fetchWeatherData = async (lat, lon) => {
+  const fetchWeatherData = async (lat, lon, districtName) => {
     try {
       setLoading(true);
       setErrorMessage('');
@@ -196,6 +199,7 @@ const Weather = () => {
       const data = await response.json();
       if (!data.current) throw new Error('No weather data available');
 
+      // Process the weather data
       const processedData = {
         temperature: data.current.temperature_2m,
         humidity: data.current.relative_humidity_2m,
@@ -206,13 +210,14 @@ const Weather = () => {
         pressure: data.current.pressure_msl,
         uvIndex: data.current.uv_index,
         rainProbability: data.daily?.precipitation_probability_max[0] || 0,
-        location: locationName || 'Current Location',
+        location: districtName || locationName || 'Current Location',
         coordinates: {
           latitude: lat,
           longitude: lon
         }
       };
 
+      // Update both local state and shared context
       setWeatherData(processedData);
       checkAndShowAlerts(processedData);
     } catch (error) {
@@ -223,7 +228,7 @@ const Weather = () => {
     }
   };
 
-  // Modified alert system for general weather warnings
+
   const checkAndShowAlerts = (data) => {
     const alerts = [];
     const { temperature, humidity, windspeed, uvIndex } = data;
@@ -249,8 +254,18 @@ const Weather = () => {
     }
   };
 
+
+  // Use effect to load data initially
   useEffect(() => {
-    getCurrentLocation();
+    // If we already have weather data in context, use that
+    if (weatherData) {
+      setLoading(false);
+      // Optionally, you might still want to refresh the data
+      // fetchWeatherData(weatherData.coordinates.latitude, weatherData.coordinates.longitude);
+    } else {
+      // Otherwise, get current location and fetch data
+      getCurrentLocation();
+    }
   }, []);
 
   return (
@@ -520,3 +535,7 @@ const styles = StyleSheet.create({
 });
 
 export default Weather;
+
+function checkAndShowAlerts(processedData: { temperature: any; humidity: any; windspeed: any; weatherCode: any; precipitation: any; cloudCover: any; pressure: any; uvIndex: any; rainProbability: any; location: any; coordinates: { latitude: any; longitude: any; }; }) {
+  throw new Error('Function not implemented.');
+}

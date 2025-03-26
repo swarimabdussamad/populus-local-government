@@ -21,6 +21,12 @@ Object.defineProperty(exports, "IMultiSelectRef", {
     return _model2.IMultiSelectRef;
   }
 });
+Object.defineProperty(exports, "ISelectCountryRef", {
+  enumerable: true,
+  get: function () {
+    return _model3.ISelectCountryRef;
+  }
+});
 Object.defineProperty(exports, "MultiSelect", {
   enumerable: true,
   get: function () {
@@ -38,5 +44,6 @@ var _MultiSelect = _interopRequireDefault(require("./components/MultiSelect"));
 var _SelectCountry = _interopRequireDefault(require("./components/SelectCountry"));
 var _model = require("./components/Dropdown/model");
 var _model2 = require("./components/MultiSelect/model");
+var _model3 = require("./components/SelectCountry/model");
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 //# sourceMappingURL=index.js.map

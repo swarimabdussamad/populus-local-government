@@ -1,11 +1,9 @@
-import React from "react";
+import React, { createContext, useState } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Foundation, MaterialCommunityIcons, Feather, Ionicons } from "@expo/vector-icons";
 
 // Import your screens
-import Home from "./homed"
-import Weather from "@/app/(tabd)/weatherscreen";
 import Map from "@/app/(tabd)/map";
 import HouseDetails from '@/app/(tabd)/HouseDetails'; // Adjust the path if needed
 import SurveyList from "@/app/(tabd)/survey/SurveyListd";
@@ -13,6 +11,9 @@ import NewSurvey from "@/app/(tabd)/survey/NewSurveyd";
 import Profile from "@/app/(tabd)/profiled";
 import HomeDepartment from "./homed";
 import SurveyResults from "./survey/SurveyResultd";
+import Weather from "@/app/(tabd)/weatherscreen";
+
+export const WeatherContext = createContext(null)
 
 const Tab = createBottomTabNavigator();
 const SurveyStack = createNativeStackNavigator();
@@ -81,62 +82,65 @@ const MapStackNavigator = () => {
 
 // Tab Navigator Configuration
 const TabLayout = () => {
+  const [weatherData, setWeatherData] = useState(null);
   return (
-    <Tab.Navigator
-      screenOptions={{
-        tabBarStyle: { backgroundColor: "#161622" },
-        tabBarActiveTintColor: "#fff",
-        tabBarInactiveTintColor: "#888",
-        headerTitleAlign: "center",
-        headerShown:false
-      }}
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeStackNavigator}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Foundation name="home" color={color} size={size} />
-          ),
+    <WeatherContext.Provider value={{ weatherData, setWeatherData }}>
+      <Tab.Navigator
+        screenOptions={{
+          tabBarStyle: { backgroundColor: "#161622" },
+          tabBarActiveTintColor: "#fff",
+          tabBarInactiveTintColor: "#888",
+          headerTitleAlign: "center",
+          headerShown:false
         }}
-      />
-      <Tab.Screen
-        name="Map"
-        component={MapStackNavigator} // Use Map Stack here
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons
-              name="home-map-marker"
-              color={color}
-              size={size}
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Survey"
-        component={SurveyStackNavigator} // Use Survey Stack here
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons
-              name="clipboard-text-outline"
-              color={color}
-              size={size}
-            />
-          ),
-        }}
-      />
+      >
+        <Tab.Screen
+          name="Home"
+          component={HomeStackNavigator}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Foundation name="home" color={color} size={size} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Map"
+          component={MapStackNavigator} // Use Map Stack here
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <MaterialCommunityIcons
+                name="home-map-marker"
+                color={color}
+                size={size}
+              />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Survey"
+          component={SurveyStackNavigator} // Use Survey Stack here
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <MaterialCommunityIcons
+                name="clipboard-text-outline"
+                color={color}
+                size={size}
+              />
+            ),
+          }}
+        />
       
-      <Tab.Screen
-        name="Profile"
-        component={Profile}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-circle-outline" color={color} size={size} />
-          ),
-        }}
-      />
-    </Tab.Navigator>
+        <Tab.Screen
+          name="Profile"
+          component={Profile}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="person-circle-outline" color={color} size={size} />
+           ),
+          }}
+        />
+      </Tab.Navigator>
+    </WeatherContext.Provider>  
   );
 };
 
