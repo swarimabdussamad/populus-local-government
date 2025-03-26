@@ -39,6 +39,7 @@ const PALAKKAD_LOCAL_BODIES = {
     "KARIMPUZHA",
     "MALAMPUZHA",
     "MUNDUR",
+    "KADAMPAZHIPURAM",
   ],
   Municipality: [
     "PALAKKAD",

@@ -19,7 +19,7 @@ const SELF_GOVERNMENT_TYPES = ["Panchayath", "Municipality"];
 const PALAKKAD_LOCAL_BODIES = {
   Panchayath: [
     "SREEKRISHNAPURAM",
-
+"KADAMPAZHIPURAM",
     "KARIMPUZHA",
 
     "MALAMPUZHA",
