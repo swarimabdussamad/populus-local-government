@@ -18,6 +18,7 @@ import { API_URL } from '@/constants/constants';
 import * as Linking from 'expo-linking';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Column mapping for Excel import
 const COLUMN_MAPPING = {
@@ -28,18 +29,20 @@ const COLUMN_MAPPING = {
   'Income': 'income',
   'House Details': 'houseDetails',
   'Ward Number': 'wardNumber',
-  'Place': 'place',
+  'Self Government type': 'selfGovType',
   'Locality': 'locality',
   'District': 'district',
   'Mobile Number': 'mobileNo',
   'Aadhaar Number': 'aadhaarNo',
   'Ration ID': 'rationId',
-  'Is Owner Home': 'isOwnerHome'
+  'Is Owner Home': 'isOwnerHome',
+  'Latitude': 'latitude',       // Add these new fields
+  'Longitude': 'longitude',
 };
 
 const REQUIRED_COLUMNS = [
   'Name', 'Date of Birth', 'Gender', 'Email', 'House Details', 
-  'Ward Number', 'Place', 'Locality', 'District', 'Mobile Number', 
+  'Ward Number', 'Self Government type', 'Locality', 'District', 'Mobile Number', 
   'Aadhaar Number', 'Ration ID'
 ];
 
@@ -51,7 +54,7 @@ interface ResidentData {
   income: string;
   houseDetails: string;
   wardNumber: string;
-  place: string;
+  selfGovType: string;
   locality: string;
   district: string;
   mobileNo: string;
@@ -120,7 +123,7 @@ const ImportResident: React.FC = () => {
       if (result.canceled) {
         return;
       }
-
+      
       // Reset states
       setParsedData([]);
       setValidationErrors([]);
@@ -191,19 +194,40 @@ const ImportResident: React.FC = () => {
       // Process and transform data
       const processedData = jsonData.map((row: any) => {
         // Map Excel columns to our data model
-        const residentData: Partial<ResidentData> = {};
-        
-        Object.entries(COLUMN_MAPPING).forEach(([excelCol, dataField]) => {
-          if (excelCol in row) {
-            // Convert Excel serial dates to readable format
-            if (dataField === 'dateOfBirth' && typeof row[excelCol] === 'number') {
-              residentData[dataField] = convertExcelDate(row[excelCol]);
-            } else {
-              residentData[dataField] = row[excelCol]?.toString() || '';
-            }
-            
-          }
-        });
+        // Create the resident object with explicit field mapping
+  const residentData: ResidentData = {
+    // Map all fields explicitly to avoid any naming issues
+    name: row['Name']?.toString() || '',
+    dateOfBirth: row['Date of Birth'] ? convertExcelDate(row['Date of Birth']) : '',
+    gender: row['Gender']?.toString() || '',
+    email: row['Email']?.toString() || '',
+    income: row['Income']?.toString() || '',
+    houseDetails: row['House Details']?.toString() || row['houseDetails']?.toString() || 'Not specified', // THIS WAS MISSING
+    wardNumber: row['Ward Number']?.toString() || '',
+    selfGovType: row['Self Government type']?.toString() || '',
+    locality: row['Locality']?.toString() || '',
+    district: row['District']?.toString() || '',
+    mobileNo: row['Mobile Number']?.toString() || '',
+    aadhaarNo: row['Aadhaar Number']?.toString() || '',
+    rationId: row['Ration ID']?.toString() || '',
+    isOwnerHome: row['Is Owner Home']?.toString() || 'No',
+    latitude: row['Latitude']?.toString() || '10.7867',
+    longitude: row['Longitude']?.toString() || '76.6548',
+    photo: 'https://res.cloudinary.com/dnwlvkrqs/image/upload/v1709756169/default_profile_s5lwlz.png',
+    mappedHouse: `Latitude: ${parseFloat(row['Latitude'] || '10.7867').toFixed(12)}, Longitude: ${parseFloat(row['Longitude'] || '76.6548').toFixed(12)}`,
+    // Generated fields
+    username: '',
+    password: ''
+  };
+        // Object.entries(COLUMN_MAPPING).forEach(([excelCol, dataField]) => {
+        //   if (excelCol in row) { // Skip houseDetails since we already set it
+        //     if (dataField === 'dateOfBirth' && typeof row[excelCol] === 'number') {
+        //       residentData[dataField] = convertExcelDate(row[excelCol]);
+        //     } else {
+        //       residentData[dataField] = row[excelCol]?.toString() || '';
+        //     }
+        //   }
+        // });
         
         // Generate username based on name and mobile
         const namePart = (residentData.name || '').toLowerCase().replace(/\s+/g, '_').substring(0, 10);
@@ -217,10 +241,10 @@ const ImportResident: React.FC = () => {
         
         // Default values for required fields
         residentData.photo = 'https://res.cloudinary.com/dnwlvkrqs/image/upload/v1709756169/default_profile_s5lwlz.png';
-        residentData.mappedHouse = JSON.stringify({
-          latitude: 10.7867,  // Default to center of Kerala
-          longitude: 76.6548
-        });
+        // residentData.mappedHouse = JSON.stringify({
+        //   latitude: 10.7867,  // Default to center of Kerala
+        //   longitude: 76.6548
+        // });
         
         return residentData as ResidentData;
       });
@@ -330,6 +354,9 @@ const ImportResident: React.FC = () => {
   
   // Submit data to server
   const handleSubmit = async () => {
+
+    console.log('Data being submitted:', JSON.stringify(parsedData[0], null, 2));
+
     if (validationErrors.length > 0) {
       Alert.alert(
         'Validation Errors',
@@ -348,6 +375,12 @@ const ImportResident: React.FC = () => {
     setFailCount(0);
     
     try {
+      const token = await AsyncStorage.getItem('userToken');
+    if (!token) {
+      Alert.alert('Error', 'Authentication token not found');
+      setIsSubmitting(false);
+      return;
+    }
       // Process in batches of 10 to avoid overwhelming the server
       const batchSize = 10;
       let successCount = 0;
@@ -365,10 +398,11 @@ const ImportResident: React.FC = () => {
                 dateOfBirth: formatDate(resident.dateOfBirth)
               };
               
-              const response = await fetch(`${API_URL}/user/resident_signup`, {
+              const response = await fetch(`${API_URL}/government/adding_residents`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`, // Include the token here
                 },
                 body: JSON.stringify(formattedResident),
               });
@@ -460,7 +494,7 @@ const ImportResident: React.FC = () => {
 
   // Add this function to handle the download
   const downloadTemplate = async () => {
-    const templateUrl = 'https://docs.google.com/spreadsheets/d/1F1hqGHIKbtGUEbktLVcMUbTdWc5XvJg8/edit?usp=sharing&ouid=105719840336689489096&rtpof=true&sd=true';
+    const templateUrl = 'https://docs.google.com/spreadsheets/d/1F1hqGHIKbtGUEbktLVcMUbTdWc5XvJg8/edit?usp=drive_link&ouid=105719840336689489096&rtpof=true&sd=true';
 
     try {
       // Open the URL in the user's browser
