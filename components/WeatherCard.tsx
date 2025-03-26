@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Ionicons from '@expo/vector-icons;
 import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { WeatherContext } from '@/app/(tabs)/_layout'; // Adjust path as needed
