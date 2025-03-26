@@ -114,32 +114,35 @@ const ImportResident: React.FC = () => {
 
   // Select Excel file from device
   const pickExcelFile = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        copyToCacheDirectory: true
-      });
-      
-      if (result.canceled) {
-        return;
-      }
-      
-      // Reset states
-      setParsedData([]);
-      setValidationErrors([]);
-      setTableData([]);
-      setTableHeaders([]);
-      setSuccessCount(0);
-      setFailCount(0);
-      
-      setFileSelected(result.assets[0].name);
-      parseExcelFile(result.assets[0].uri);
-    } catch (error) {
-      console.error('Error picking document:', error);
-      Alert.alert('Error', 'Could not select the file');
+  try {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      copyToCacheDirectory: true
+    });
+    
+    if (result.canceled) {
+      return;
     }
-  };
-  
+    
+    // Reset states
+    setParsedData([]);
+    setValidationErrors([]);
+    setTableData([]);
+    setTableHeaders([]);
+    setSuccessCount(0);
+    setFailCount(0);
+    
+    setFileSelected(result.assets[0].name);
+    
+    // Log the file name for additional debugging
+    console.log('Selected File:', result.assets[0].name);
+    
+    parseExcelFile(result.assets[0].uri);
+  } catch (error) {
+    console.error('Error picking document:', error);
+    Alert.alert('Error', 'Could not select the file');
+  }
+};
   // Parse the Excel file
   const parseExcelFile = async (fileUri: string) => {
     setIsLoading(true);
@@ -161,7 +164,7 @@ const ImportResident: React.FC = () => {
 
       // Debug: Log column names
       console.log('Columns in Excel file:', Object.keys(firstRow));
-
+      console.log('Raw Row Data:', JSON.stringify(Row, null, 2));
       const normalizeColumnName = (name: string) => {
         return name.trim().toLowerCase().replace(/\s+/g, ' ');
       };
@@ -202,7 +205,14 @@ const ImportResident: React.FC = () => {
     gender: row['Gender']?.toString() || '',
     email: row['Email']?.toString() || '',
     income: row['Income']?.toString() || '',
-    houseDetails: row['House Details']?.toString() || row['houseDetails']?.toString() || 'Not specified', // THIS WAS MISSING
+    houseDetails: row['House Details ']?.toString() ||
+      row['house details']?.toString() || 
+      row['houseDetails']?.toString() || 
+      row['House_Details']?.toString() || 
+      row['house_details']?.toString() || 
+      row['Household Details']?.toString() || 
+      'Not specified',
+    
     wardNumber: row['Ward Number']?.toString() || '',
     selfGovType: row['Self Government type']?.toString() || '',
     locality: row['Locality']?.toString() || '',
@@ -337,14 +347,34 @@ const ImportResident: React.FC = () => {
             COLUMN_MAPPING[err.column as keyof typeof COLUMN_MAPPING] === key
           );
           
-          return value;
+          return cellError ? `❌ ${value}` : value;
         })
       ];
     }).filter(Boolean) as string[][];
     
     setTableData(rows);
   };
-  
+  const showRowErrors = (rowIndex: number) => {
+    const errorsForRow = validationErrors.filter(err => err.row === rowIndex);
+    
+    if (errorsForRow.length === 0) {
+      Alert.alert(
+        'No Validation Errors',
+        `Row ${rowIndex + 1} has no validation errors.`
+      );
+      return;
+    }
+    
+    const errorMessages = errorsForRow.map(err => 
+      `• Column "${err.column}": ${err.message}`
+    ).join('\n\n');
+    
+    Alert.alert(
+      `Validation Errors for Row ${rowIndex + 1}`,
+      errorMessages,
+      [{ text: 'OK' }]
+    );
+  };
   // Toggle between all data and errors only
   const togglePreviewMode = () => {
     const newMode = previewMode === 'all' ? 'errors' : 'all';
@@ -354,9 +384,6 @@ const ImportResident: React.FC = () => {
   
   // Submit data to server
   const handleSubmit = async () => {
-
-    console.log('Data being submitted:', JSON.stringify(parsedData[0], null, 2));
-
     if (validationErrors.length > 0) {
       Alert.alert(
         'Validation Errors',
@@ -376,15 +403,16 @@ const ImportResident: React.FC = () => {
     
     try {
       const token = await AsyncStorage.getItem('userToken');
-    if (!token) {
-      Alert.alert('Error', 'Authentication token not found');
-      setIsSubmitting(false);
-      return;
-    }
-      // Process in batches of 10 to avoid overwhelming the server
+      if (!token) {
+        Alert.alert('Error', 'Authentication token not found');
+        setIsSubmitting(false);
+        return;
+      }
+      
       const batchSize = 10;
       let successCount = 0;
       let failCount = 0;
+      let detailedErrors: {name: string, errorMessage: string}[] = [];
       
       for (let i = 0; i < parsedData.length; i += batchSize) {
         const batch = parsedData.slice(i, i + batchSize);
@@ -392,7 +420,6 @@ const ImportResident: React.FC = () => {
         const results = await Promise.all(
           batch.map(async (resident) => {
             try {
-              // Format date if needed
               const formattedResident = {
                 ...resident,
                 dateOfBirth: formatDate(resident.dateOfBirth)
@@ -402,29 +429,48 @@ const ImportResident: React.FC = () => {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`, // Include the token here
+                  'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify(formattedResident),
               });
               
+              // Parse the response body
+              const responseData = await response.json();
+              
               if (!response.ok) {
-                throw new Error(`Failed to register ${resident.name}`);
+                // Throw an error with details from the server
+                throw new Error(
+                  responseData.message || 
+                  `Failed to register ${resident.name}` || 
+                  'Unknown error occurred'
+                );
               }
               
-              return { success: true };
+              return { 
+                success: true, 
+                name: resident.name 
+              };
             } catch (error) {
               console.error(`Error registering ${resident.name}:`, error);
-              return { success: false };
+              return { 
+                success: false, 
+                name: resident.name, 
+                errorMessage: error instanceof Error ? error.message : 'Unknown error'
+              };
             }
           })
         );
         
-        // Update counts
+        // Process results
         results.forEach(result => {
           if (result.success) {
             successCount++;
           } else {
             failCount++;
+            detailedErrors.push({
+              name: result.name,
+              errorMessage: result.errorMessage || 'Unknown error'
+            });
           }
         });
         
@@ -439,31 +485,47 @@ const ImportResident: React.FC = () => {
         Alert.alert(
           'Success',
           `All ${successCount} residents were successfully registered.`,
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Reset the form or redirect
-                setParsedData([]);
-                setFileSelected(null);
-                setValidationErrors([]);
-                setTableData([]);
-                setTableHeaders([]);
-                router.push('/home'); // Redirect to home screen
-              },
-            },
-          ]
+          [{ text: 'OK', onPress: () => {
+            setParsedData([]);
+            setFileSelected(null);
+            setValidationErrors([]);
+            setTableData([]);
+            setTableHeaders([]);
+            router.push('/home');
+          }}]
         );
       } else {
+        // Show detailed error dialog
         Alert.alert(
-          'Partial Success',
-          `${successCount} residents were successfully registered. ${failCount} registrations failed.`
+          'Registration Errors',
+          `${successCount} residents were successfully registered. ${failCount} registrations failed.`,
+          [
+            {
+              text: 'View Errors',
+              onPress: () => {
+                // Create a detailed error message
+                const errorDetails = detailedErrors.map(
+                  (error, index) => `${index + 1}. ${error.name}: ${error.errorMessage}`
+                ).join('\n\n');
+                
+                Alert.alert(
+                  'Detailed Registration Errors',
+                  errorDetails,
+                  [{ text: 'OK' }]
+                );
+              }
+            },
+            { text: 'Dismiss' }
+          ]
         );
       }
     } catch (error) {
       console.error('Error submitting data:', error);
       setIsSubmitting(false);
-      Alert.alert('Error', 'An error occurred while submitting the data.');
+      Alert.alert(
+        'Error', 
+        error instanceof Error ? error.message : 'An error occurred while submitting the data.'
+      );
     }
   };
   
@@ -541,7 +603,7 @@ const ImportResident: React.FC = () => {
           <Ionicons name="cloud-upload-outline" size={48} color="#2c3e50" />
           <Text style={styles.headerTitle}>Bulk Resident Import</Text>
         </View>
-
+  
         <View style={styles.instructionCard}>
           <View style={styles.instructionStep}>
             <Ionicons name="download-outline" size={24} color="#3498db" />
@@ -555,7 +617,7 @@ const ImportResident: React.FC = () => {
             <Ionicons name="cloud-upload-outline" size={24} color="#e74c3c" />
             <Text style={styles.instructionText}>Upload Completed File</Text>
           </View>
-
+  
           <TouchableOpacity 
             style={styles.templateButton} 
             onPress={downloadTemplate}
@@ -563,7 +625,7 @@ const ImportResident: React.FC = () => {
             <Text style={styles.templateButtonText}>Download Template</Text>
           </TouchableOpacity>
         </View>
-
+  
         <TouchableOpacity 
           style={styles.uploadCard} 
           onPress={pickExcelFile}
@@ -578,14 +640,14 @@ const ImportResident: React.FC = () => {
             {fileSelected ? `Selected: ${fileSelected}` : 'Upload Excel File'}
           </Text>
         </TouchableOpacity>
-
+  
         {isLoading && (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color="#3498db" />
             <Text style={styles.loadingText}>Processing Data...</Text>
           </View>
         )}
-
+  
         {parsedData.length > 0 && !isLoading && (
           <View style={styles.dataCard}>
             <View style={styles.dataHeader}>
@@ -593,12 +655,22 @@ const ImportResident: React.FC = () => {
                 {parsedData.length} Residents Found
               </Text>
               {validationErrors.length > 0 && (
-                <Text style={styles.errorHeaderText}>
-                  {validationErrors.length} Validation Errors
-                </Text>
+                <View style={styles.errorHeaderContainer}>
+                  <Text style={styles.errorHeaderText}>
+                    {validationErrors.length} Validation Errors
+                  </Text>
+                  <TouchableOpacity 
+                    style={styles.errorToggle} 
+                    onPress={togglePreviewMode}
+                  >
+                    <Text style={styles.errorToggleText}>
+                      {previewMode === 'all' ? 'Show Only Errors' : 'Show All Rows'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
-
+  
             <ScrollView horizontal>
               <View>
                 {/* Table Header */}
@@ -612,37 +684,84 @@ const ImportResident: React.FC = () => {
                     </View>
                   ))}
                 </View>
-
+  
                 {/* Table Rows */}
-                {tableData.map((row, rowIndex) => (
-                  <TouchableOpacity
-                    key={`row-${rowIndex}`}
-                    style={styles.tableRow}
-                    onPress={() => showAllColumnsForRow(parseInt(row[0]) - 1)}
-                  >
-                    {row.map((cell, cellIndex) => (
-                      <View
-                        key={`cell-${cellIndex}`}
-                        style={[styles.tableCell, { width: columnWidths[tableHeaders[cellIndex]] || 120 }]}
-                      >
-                        <Text style={styles.tableCellText} numberOfLines={1} ellipsizeMode="tail">
-                          {cell}
-                        </Text>
-                      </View>
-                    ))}
-                  </TouchableOpacity>
-                ))}
+                {tableData.map((row, rowIndex) => {
+                  const originalRowIndex = parseInt(row[0]) - 1;
+                  const hasErrors = validationErrors.some(err => err.row === originalRowIndex);
+                  
+                  return (
+                    <TouchableOpacity
+                      key={`row-${rowIndex}`}
+                      style={[
+                        styles.tableRow,
+                        hasErrors && styles.errorRow
+                      ]}
+                      onPress={() => showRowErrors(originalRowIndex)}
+                    >
+                      {row.map((cell, cellIndex) => {
+                        const isErrorCell = cell.startsWith('❌');
+                        const cellValue = isErrorCell ? cell.substring(2) : cell;
+                        
+                        return (
+                          <View
+                            key={`cell-${cellIndex}`}
+                            style={[
+                              styles.tableCell, 
+                              { width: columnWidths[tableHeaders[cellIndex]] || 120 },
+                              isErrorCell && styles.errorCell
+                            ]}
+                          >
+                            <Text 
+                              style={[
+                                styles.tableCellText,
+                                isErrorCell && styles.errorCellText
+                              ]} 
+                              numberOfLines={1} 
+                              ellipsizeMode="tail"
+                            >
+                              {cellValue}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </ScrollView>
-
+  
+            {/* Error summary */}
+            {validationErrors.length > 0 && (
+              <View style={styles.errorSummary}>
+                <Text style={styles.errorSummaryTitle}>Validation Error Summary:</Text>
+                {Array.from(new Set(validationErrors.map(e => e.column))).map(column => {
+                  const count = validationErrors.filter(e => e.column === column).length;
+                  return (
+                    <Text key={column} style={styles.errorSummaryItem}>
+                      • {count} error(s) in {column}
+                    </Text>
+                  );
+                })}
+              </View>
+            )}
+  
             <TouchableOpacity 
-              style={styles.submitButton} 
+              style={[
+                styles.submitButton,
+                validationErrors.length > 0 && styles.disabledButton
+              ]} 
               onPress={handleSubmit}
               disabled={validationErrors.length > 0 || isSubmitting}
             >
               <Text style={styles.submitButtonText}>
                 {isSubmitting ? 'Registering...' : 'Register All Residents'}
               </Text>
+              {validationErrors.length > 0 && (
+                <Text style={styles.submitButtonErrorText}>
+                  ({validationErrors.length} errors must be fixed first)
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         )}
@@ -801,6 +920,54 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  errorHeaderContainer: {
+    alignItems: 'flex-end',
+  },
+  errorToggle: {
+    marginTop: 4,
+  },
+  errorToggleText: {
+    color: '#3498db',
+    fontSize: 14,
+    textDecorationLine: 'underline',
+  },
+  errorRow: {
+    backgroundColor: '#fff0f0',
+  },
+  errorCell: {
+    backgroundColor: '#ffdddd',
+  },
+  errorCellText: {
+    color: '#e74c3c',
+    fontWeight: 'bold',
+  },
+  errorSummary: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#fff0f0',
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#e74c3c',
+  },
+  errorSummaryTitle: {
+    fontWeight: 'bold',
+    color: '#e74c3c',
+    marginBottom: 8,
+  },
+  errorSummaryItem: {
+    color: '#c0392b',
+    marginLeft: 8,
+    marginBottom: 4,
+  },
+  disabledButton: {
+    backgroundColor: '#95a5a6',
+  },
+  submitButtonErrorText: {
+    color: '#fff',
+    fontSize: 12,
+    marginTop: 4,
+    textAlign: 'center',
   },
 });
 

@@ -1,11 +1,10 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Ionicons from '@expo/vector-icons;
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
-import { WeatherContext } from '@/app/(tabs)/_layout'; // Adjust path as needed
-
+import { WeatherContext } from '@/app/(tabs)/_layout';
 
 // Define TypeScript interface for weather data
 interface WeatherData {
@@ -20,8 +19,14 @@ interface WeatherData {
   coordinates?: { latitude: number; longitude: number };
 }
 
-// Weather code mapping for icons
-const WEATHER_CODES = {
+// Define type for WeatherContext
+interface WeatherContextType {
+  weatherData: WeatherData | null;
+  setWeatherData: (data: WeatherData) => void;
+}
+
+// Weather code mapping for icons with type
+const WEATHER_CODES: Record<number, {description: string; icon: string}> = {
   0: { description: 'Clear sky', icon: 'weather-sunny' },
   1: { description: 'Mainly clear', icon: 'weather-partly-cloudy' },
   2: { description: 'Partly cloudy', icon: 'weather-partly-cloudy' },
@@ -60,16 +65,15 @@ const THRESHOLDS = {
 
 const WeatherCard = () => {
   const navigation = useNavigation();
-  const weatherContext = useContext(WeatherContext);
+  const weatherContext = useContext(WeatherContext) as unknown as WeatherContextType;
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   
-  // Add a fallback in case context is undefined
-  const { weatherData, setWeatherData } = weatherContext || {};
+  const { weatherData, setWeatherData } = weatherContext;
 
   // Utility function to check for weather alerts
   const checkAndShowAlerts = (data: WeatherData) => {
-    const alerts = [];
+    const alerts: string[] = [];
     const { temperature, humidity, windspeed, uvIndex } = data;
 
     if (temperature > THRESHOLDS.temperature.extreme_high) {
@@ -94,15 +98,9 @@ const WeatherCard = () => {
   };
 
   const fetchWeatherData = async () => {
-    // Skip if context is not properly initialized
-    if (!setWeatherData) {
-      setError('Weather context not initialized');
-      setLoading(false);
-      return;
-    }
-    
     try {
       setLoading(true);
+      setError(null);
       
       // Request location permission
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -172,27 +170,20 @@ const WeatherCard = () => {
   };
 
   useEffect(() => {
-    // Check if context is properly set up
-    if (!weatherContext) {
-      setError('Weather context not available');
-      setLoading(false);
-      return;
-    }
-    
     // Fetch weather data when component mounts if it's not already available
     if (!weatherData) {
       fetchWeatherData();
     } else {
       setLoading(false);
     }
-  }, [weatherData, weatherContext]);
+  }, [weatherData]);
 
   const handlePress = () => {
-    navigation.navigate('Weather');
+    navigation.navigate('Weather' as never);
   };
 
   // Helper function to get weather icon
-  const getWeatherIcon = (code) => {
+  const getWeatherIcon = (code: number) => {
     return WEATHER_CODES[code]?.icon || 'weather-partly-cloudy';
   };
 
@@ -217,12 +208,12 @@ const WeatherCard = () => {
             
             <View style={styles.rightSection}>
               <MaterialCommunityIcons 
-                name={getWeatherIcon(weatherData.weatherCode)}
+                name={getWeatherIcon(weatherData.weatherCode || 0) as any}
                 size={38} 
                 color="#2C3E50" 
               />
               <Text style={styles.weatherCondition}>
-                {WEATHER_CODES[weatherData.weatherCode]?.description || 'Unknown'}
+                {WEATHER_CODES[weatherData.weatherCode || 0]?.description || 'Unknown'}
               </Text>
             </View>
           </View>
@@ -242,7 +233,7 @@ const WeatherCard = () => {
             
             <View style={styles.detailItem}>
               <MaterialCommunityIcons name="weather-rainy" size={16} color="#546E7A" />
-              <Text style={styles.detailText}>{Math.round(weatherData.rainProbability)}%</Text>
+              <Text style={styles.detailText}>{Math.round(weatherData.rainProbability || 0)}%</Text>
             </View>
           </View>
           
