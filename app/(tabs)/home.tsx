@@ -345,6 +345,7 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
+  const { weatherData } = useContext(WeatherContext);
   
   const [newPost, setNewPost] = useState({
     department: '',

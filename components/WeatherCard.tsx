@@ -67,17 +67,21 @@ const WeatherCard = () => {
   const navigation = useNavigation();
   const weatherContext = useContext(WeatherContext) as unknown as WeatherContextType;
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
+  const [error, setError] = useState(null);
+  const [alertShown, setAlertShown] = useState(false);
   const { weatherData, setWeatherData } = weatherContext;
 
   // Utility function to check for weather alerts
   const checkAndShowAlerts = (data: WeatherData) => {
-    const alerts: string[] = [];
+    // Prevent multiple alert displays
+    if (alertShown) return;
+    const alerts = [];
     const { temperature, humidity, windspeed, uvIndex } = data;
 
     if (temperature > THRESHOLDS.temperature.extreme_high) {
       alerts.push('🌡️ Extreme heat alert! Stay hydrated and avoid outdoor activities.');
+    } else if (temperature < THRESHOLDS.temperature.extreme_low) {
+      alerts.push('🥶 Extremely cold conditions. Wear warm clothing.');
     }
 
     if (humidity > THRESHOLDS.humidity.very_high) {
@@ -93,9 +97,21 @@ const WeatherCard = () => {
     }
 
     if (alerts.length > 0) {
-      Alert.alert('Weather Alerts', alerts.join('\n\n'));
+      Alert.alert(
+        'Weather Alerts', 
+        alerts.join('\n\n'), 
+        [{ 
+          text: 'OK', 
+          onPress: () => {
+            setAlertShown(true);
+            console.log('Alerts acknowledged');
+          }
+        }]
+      );
     }
   };
+
+  
 
   const fetchWeatherData = async () => {
     try {
@@ -168,15 +184,24 @@ const WeatherCard = () => {
       setLoading(false);
     }
   };
-
+  
   useEffect(() => {
     // Fetch weather data when component mounts if it's not already available
     if (!weatherData) {
       fetchWeatherData();
     } else {
+      // If weather data exists, check for alerts
+      checkAndShowAlerts(weatherData);
       setLoading(false);
     }
-  }, [weatherData]);
+
+    // Reset alert shown status periodically
+    const alertResetTimer = setTimeout(() => {
+      setAlertShown(false);
+    }, 3600000); // Reset every hour
+
+    return () => clearTimeout(alertResetTimer);
+  }, [weatherData, weatherContext]);
 
   const handlePress = () => {
     navigation.navigate('Weather' as never);

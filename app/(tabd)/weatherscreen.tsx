@@ -65,8 +65,8 @@ const WEATHER_CODES = {
 };
 
 const Weather = () => {
-  // const [weatherData, setWeatherData] = useState(null);
-  const { weatherData, setWeatherData } = useContext(WeatherContext);
+  const [weatherData, setWeatherData] = useState(null);
+  // const { weatherData, setWeatherData } = useContext(WeatherContext);
 
 
   const [loading, setLoading] = useState(true);
@@ -228,6 +228,15 @@ const Weather = () => {
     }
   };
 
+  useEffect(() => {
+    if (weatherData) {
+      // If weather data exists, show alerts
+      checkAndShowAlerts(weatherData);
+    } else {
+      // Otherwise, get current location and fetch data
+      getCurrentLocation();
+    }
+  }, [weatherData]);
 
   const checkAndShowAlerts = (data) => {
     const alerts = [];
@@ -235,6 +244,8 @@ const Weather = () => {
 
     if (temperature > THRESHOLDS.temperature.extreme_high) {
       alerts.push('🌡️ Extreme heat alert! Stay hydrated and avoid outdoor activities.');
+    } else if (temperature < THRESHOLDS.temperature.extreme_low) {
+      alerts.push('🥶 Extremely cold conditions. Wear warm clothing.');
     }
 
     if (humidity > THRESHOLDS.humidity.very_high) {
