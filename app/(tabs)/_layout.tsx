@@ -16,6 +16,7 @@ import Users from "@/app/(tabs)/users";
 import Profile from "@/app/(tabs)/profile";
 import SurveyResults from "./survey/SurveyResult";
 import ImportResident from "@/app/(tabs)/importResident";
+import Message from "@/app/(tabs)/message";
 
 // Create Weather Context
 export const WeatherContext = createContext(null);
@@ -69,6 +70,11 @@ const HomeStackNavigator = () => {
         name="ImportResident"
         component={ImportResident}
         options={{  headerShown: false }}
+      />
+      <HomeStack.Screen
+        name="Message"
+        component={Message}
+        options={{  headerShown: true }}
       />
     </HomeStack.Navigator>
   );

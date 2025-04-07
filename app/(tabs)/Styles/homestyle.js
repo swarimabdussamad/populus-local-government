@@ -607,6 +607,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
+  iconButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.borderLight,
+  },
   weatherHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

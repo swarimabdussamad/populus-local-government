@@ -15,6 +15,7 @@ import {
   Alert,
   Pressable,
   RefreshControl,
+  GestureResponderEvent,
 } from 'react-native';
 import { PermissionsAndroid} from 'react-native';
 import axios from 'axios';
@@ -33,6 +34,8 @@ import WeatherCard from '../../components/WeatherCard'; // Adjust path as needed
 import { WeatherContext } from './_layout'; // Adjust path to match your file structure
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { jwtDecode } from 'jwt-decode';
+import { Entypo } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 
 const COLORS = {
@@ -48,14 +51,17 @@ const COLORS = {
   textLight: '#546E7A',
 };
 
-// Define the type for your navigation stack
 type HomeStackParamList = {
-  Home: undefined; // No parameters expected for the Home screen
-  ImportResident: undefined; // No parameters expected for the ImportResident screen
+  HomeScreen: undefined;
+  Weather: undefined;
+  ImportResident: undefined;
+  Message: undefined;
+  // Add other screens in your HomeStack here
 };
 
-// Define the type for the navigation prop
-type HomeScreenNavigationProp = StackNavigationProp<HomeStackParamList, "Home">;
+// Then get the proper navigation prop type
+type HomeScreenNavigationProp = StackNavigationProp<HomeStackParamList, 'HomeScreen'>;
+
 
 const DEPARTMENTS: Department[] = [
   { 
@@ -340,12 +346,12 @@ const CommentModal: React.FC<{
 const Home = () => {
   
   const navigation = useNavigation();
- 
+  const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
-  const { weatherData } = useContext(WeatherContext);
+  useContext(WeatherContext);
   
   const [newPost, setNewPost] = useState({
     department: '',
@@ -815,12 +821,30 @@ const Home = () => {
   };
 
   const Header = () => {
+    const navigation = useNavigation();
+    const handleMessagePress = () => {
+      try {
+        console.log("Attempting to navigate to Message");
+        (navigation as any).navigate('Message');
+        console.log("Navigation call completed");
+      } catch (error) {
+        console.error("Navigation error:", error);
+      }
+    };
+
+
     return (
       <View style={headerStyles.container}>
         <Text style={headerStyles.title}>POPULUS</Text>
-        <TouchableOpacity style={headerStyles.alertButton}>
+        {/* <TouchableOpacity style={headerStyles.alertButton}>
           <Icon name="notifications-outline" size={24} color={COLORS.primary} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
+        <TouchableOpacity
+              style={styles.iconButton}
+              onPress={handleMessagePress}
+            >
+              <Entypo name="new-message" size={24} color={COLORS.text} />
+            </TouchableOpacity>
       </View>
     );
   };
